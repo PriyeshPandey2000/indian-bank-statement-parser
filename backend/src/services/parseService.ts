@@ -3,9 +3,11 @@ import path from 'path';
 import { getDocumentDir, ensureDocumentDir } from '../utils/storage';
 import type { ParseResultJson, ScreenshotResult } from '@llamaindex/liteparse';
 
-// LiteParse is ESM-only; CJS backend must use dynamic import
+// eslint-disable-next-line @typescript-eslint/no-implied-eval
+const esmImport = new Function('m', 'return import(m)');
+
 async function getLiteParse() {
-  const mod = await import('@llamaindex/liteparse');
+  const mod = await esmImport('@llamaindex/liteparse') as typeof import('@llamaindex/liteparse');
   return mod.LiteParse;
 }
 

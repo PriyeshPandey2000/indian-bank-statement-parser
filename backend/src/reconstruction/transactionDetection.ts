@@ -43,6 +43,15 @@ const HEADER_KEYWORDS = [
   'debit', 'credit', 'balance', 'chq', 'cheque', 'ref',
 ];
 
+// Stop scanning for headers once we hit these — they mark end of transaction data
+const HEADER_STOP_PATTERNS = [
+  /transaction\s+total/i,
+  /closing\s+balance/i,
+  /^legends\s*:/i,
+  /charge\s+breakup/i,
+  /end\s+of\s+statement/i,
+];
+
 function startsWithDate(text: string): boolean {
   const t = text.trim();
   return DATE_PATTERNS.some((p) => p.test(t));
@@ -252,7 +261,9 @@ export function detectTransactions(
 
   let headerIdx = -1;
   for (let i = 0; i < rows.length; i++) {
-    if (isHeaderRow(rows[i]!.text)) {
+    const text = rows[i]!.text;
+    if (HEADER_STOP_PATTERNS.some(p => p.test(text))) break;
+    if (isHeaderRow(text)) {
       headerIdx = i;
       break;
     }

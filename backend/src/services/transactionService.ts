@@ -3,6 +3,7 @@ import path from 'path';
 import { getDocumentDir } from '../utils/storage';
 import { getStoredRows } from './rowService';
 import { detectTransactions, type TransactionDetectionResult } from '../reconstruction/transactionDetection';
+import { getBankProfileById, type BankProfile } from '../reconstruction/bankProfiles';
 
 export interface DocumentTransactions {
   page: number;
@@ -12,10 +13,14 @@ export interface DocumentTransactions {
 export function runTransactionDetection(documentId: string): DocumentTransactions[] {
   const pageRows = getStoredRows(documentId);
 
-  const result: DocumentTransactions[] = pageRows.map((pr) => ({
-    page: pr.page,
-    result: detectTransactions(pr.rows),
-  }));
+  let lastProfile: BankProfile | undefined;
+  const result: DocumentTransactions[] = pageRows.map((pr) => {
+    const detResult = detectTransactions(pr.rows, [], lastProfile);
+    // Carry forward detected profile so header-less pages (e.g. last page) use correct bank logic
+    const detected = getBankProfileById(detResult.bankProfileId);
+    if (detected.id !== 'generic') lastProfile = detected;
+    return { page: pr.page, result: detResult };
+  });
 
   // globally unique IDs across pages so React keys don't collide
   let globalId = 1;

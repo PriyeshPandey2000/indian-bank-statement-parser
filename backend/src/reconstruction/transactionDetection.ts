@@ -19,6 +19,7 @@ export interface DetectedTransaction {
   credit: string;
   balance: string;
   isSuspicious: boolean;
+  suspiciousReason?: string;
 }
 
 export interface TransactionDetectionResult {

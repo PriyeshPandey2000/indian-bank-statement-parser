@@ -4,9 +4,39 @@ import { getDocumentDir } from '../utils/storage';
 import { getStoredRows } from './rowService';
 import { getStoredTransactions, runTransactionDetection } from './transactionService';
 import { detectColumns, fillTransactionAmounts, type ColumnDetectionResult, type ColumnDefinition } from '../reconstruction/columnDetection';
-import { detectTransactions } from '../reconstruction/transactionDetection';
+import { detectTransactions, type DetectedTransaction } from '../reconstruction/transactionDetection';
+import type { DocumentTransactions } from './transactionService';
 import { getBankProfileById } from '../reconstruction/bankProfiles';
 import { getParsedJson } from './parseService';
+
+function parseAmt(s: string): number {
+  return parseFloat(s.replace(/,/g, '')) || 0;
+}
+
+export function reconcileTransactions(txData: DocumentTransactions[]): void {
+  const allTx: DetectedTransaction[] = txData.flatMap(p => p.result.transactions);
+  for (let i = 0; i < allTx.length; i++) {
+    const tx = allTx[i]!;
+    const reasons: string[] = [];
+
+    if (!tx.narration || tx.narration.trim().length < 2) reasons.push('empty narration');
+    if (!tx.date) reasons.push('no date');
+
+    if (i > 0) {
+      const prev = allTx[i - 1]!;
+      if (prev.balance && tx.balance) {
+        const expected = Math.round((parseAmt(prev.balance) - parseAmt(tx.debit) + parseAmt(tx.credit)) * 100) / 100;
+        const actual = Math.round(parseAmt(tx.balance) * 100) / 100;
+        if (Math.abs(expected - actual) > 0.01) {
+          reasons.push(`balance mismatch (expected ${expected.toFixed(2)}, got ${actual.toFixed(2)})`);
+        }
+      }
+    }
+
+    tx.isSuspicious = reasons.length > 0;
+    tx.suspiciousReason = reasons.length > 0 ? reasons.join('; ') : undefined;
+  }
+}
 
 export interface PageColumnResult {
   page: number;
@@ -89,11 +119,13 @@ export function runColumnDetection(documentId: string): PageColumnResult[] {
     }
   }
 
+  reconcileTransactions(txData);
+
   // persist column definitions
   const colPath = path.join(getDocumentDir(documentId), 'columns.json');
   fs.writeFileSync(colPath, JSON.stringify(pageResults, null, 2));
 
-  // persist updated transactions (with filled amounts)
+  // persist updated transactions (with filled amounts + reconciliation flags)
   const txPath = path.join(getDocumentDir(documentId), 'transactions.json');
   fs.writeFileSync(txPath, JSON.stringify(txData, null, 2));
 

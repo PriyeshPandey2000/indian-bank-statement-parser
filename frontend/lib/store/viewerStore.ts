@@ -77,10 +77,13 @@ interface ViewerState {
   txStatus: TxStatus;
   selectedTransaction: DetectedTransaction | null;
   showTxOverlay: boolean;
+  scrollTargetPage: number | null;
   setTxData: (data: DocumentTransactions[]) => void;
   setTxStatus: (status: TxStatus) => void;
   toggleTxOverlay: () => void;
   setSelectedTransaction: (tx: DetectedTransaction | null) => void;
+  updateTransaction: (updated: DetectedTransaction) => void;
+  setScrollTargetPage: (page: number | null) => void;
 
   reset: () => void;
 }
@@ -114,6 +117,7 @@ export const useViewerStore = create<ViewerState>()(
       txStatus: 'idle',
       selectedTransaction: null,
       showTxOverlay: true,
+      scrollTargetPage: null,
 
       initDocument: (id) =>
         set({ documentId: id, parseStatus: 'idle', currentPage: 1, rowData: null, rowStatus: 'idle' }),
@@ -178,6 +182,19 @@ export const useViewerStore = create<ViewerState>()(
       setTxStatus: (status) => set({ txStatus: status }),
       toggleTxOverlay: () => set((s) => ({ showTxOverlay: !s.showTxOverlay })),
       setSelectedTransaction: (tx) => set({ selectedTransaction: tx }),
+      setScrollTargetPage: (page) => set({ scrollTargetPage: page }),
+      updateTransaction: (updated) => set((s) => {
+        if (!s.txData) return {};
+        return {
+          txData: s.txData.map(p => ({
+            ...p,
+            result: {
+              ...p.result,
+              transactions: p.result.transactions.map(t => t.id === updated.id ? updated : t),
+            },
+          })),
+        };
+      }),
 
       reset: () =>
         set({
@@ -203,6 +220,7 @@ export const useViewerStore = create<ViewerState>()(
           txStatus: 'idle',
           selectedTransaction: null,
           showTxOverlay: true,
+          scrollTargetPage: null,
         }),
     }),
     { name: 'viewer-store' }

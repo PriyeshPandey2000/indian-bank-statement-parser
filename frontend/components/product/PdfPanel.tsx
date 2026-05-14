@@ -9,9 +9,18 @@ interface Props {
 }
 
 export default function PdfPanel({ onPageVisible }: Props) {
-  const documentId = useViewerStore(s => s.documentId);
-  const parsedData = useViewerStore(s => s.parsedData);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const documentId      = useViewerStore(s => s.documentId);
+  const parsedData      = useViewerStore(s => s.parsedData);
+  const scrollTargetPage = useViewerStore(s => s.scrollTargetPage);
+  const setScrollTargetPage = useViewerStore(s => s.setScrollTargetPage);
+  const containerRef    = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollTargetPage === null || !containerRef.current) return;
+    const el = containerRef.current.querySelector(`[data-page="${scrollTargetPage}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setScrollTargetPage(null);
+  }, [scrollTargetPage, setScrollTargetPage]);
 
   // Intersection observer — report which page is most visible
   useEffect(() => {

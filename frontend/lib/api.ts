@@ -73,3 +73,18 @@ export async function getColumns(documentId: string): Promise<PageColumnResult[]
 export function exportCsvUrl(documentId: string): string {
   return `${PROXY}/api/document/${documentId}/export/csv`;
 }
+
+export async function patchTransactions(
+  documentId: string,
+  edits: Array<{ id: number; date?: string; narration?: string; debit?: string; credit?: string; balance?: string }>
+): Promise<DocumentTransactions[]> {
+  return request<DocumentTransactions[]>(`/api/document/${documentId}/transactions`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ edits }),
+  });
+}
+
+export async function reconcile(documentId: string): Promise<DocumentTransactions[]> {
+  return request<DocumentTransactions[]>(`/api/document/${documentId}/reconcile`, { method: 'POST' });
+}

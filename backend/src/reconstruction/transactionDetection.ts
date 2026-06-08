@@ -27,6 +27,7 @@ export interface TransactionDetectionResult {
   transactions: DetectedTransaction[];
   headerRowId: number | null;
   bankProfileId: string;
+  unconsumedPreBuffer: ReconstructedRow[];
 }
 
 const DATE_PATTERNS = [
@@ -39,7 +40,7 @@ const DATE_PATTERNS = [
 ];
 
 const HEADER_KEYWORDS = [
-  'tran date', 'trans date', 'value date', 'date',
+  'tran date', 'trans date', 'value date', 'txn date', 'date',
   'particulars', 'narration', 'description', 'details',
   'debit', 'credit', 'balance', 'chq', 'cheque', 'ref',
 ];
@@ -51,6 +52,7 @@ const HEADER_STOP_PATTERNS = [
   /^legends\s*:/i,
   /charge\s+breakup/i,
   /end\s+of\s+statement/i,
+  /statement\s+summary/i,
 ];
 
 function startsWithDate(text: string): boolean {
@@ -89,7 +91,8 @@ function buildPreNarrationTransactions(
   rows: ReconstructedRow[],
   headerIdx: number,
   profile: BankProfile,
-  columns: ColumnDefinition[]
+  columns: ColumnDefinition[],
+  initialPreBuffer: ReconstructedRow[] = []
 ): TransactionDetectionResult {
   const classified: ClassifiedRow[] = rows.map((row, idx) => ({
     row,
@@ -98,7 +101,7 @@ function buildPreNarrationTransactions(
 
   const transactions: DetectedTransaction[] = [];
   let txId = 1;
-  let preBuffer: ReconstructedRow[] = [];
+  let preBuffer: ReconstructedRow[] = [...initialPreBuffer];
 
   const markBuffer = (bufRows: ReconstructedRow[]) => {
     for (const pr of bufRows) {
@@ -153,6 +156,7 @@ function buildPreNarrationTransactions(
     transactions,
     headerRowId: headerIdx !== -1 ? (rows[headerIdx]?.rowId ?? null) : null,
     bankProfileId: profile.id,
+    unconsumedPreBuffer: preBuffer,
   };
 }
 
@@ -184,10 +188,12 @@ function buildPostNarrationTransactions(
     const c = classified[i]!;
     if (c.type === 'TRANSACTION') {
       inBlock = true;
-    } else if (c.type === 'OTHER' && inBlock && c.row.text.trim().length > 0 &&
-               !isSpecialRow(c.row.text, profile) &&
-               !isHeaderRow(c.row.text)) {
-      c.type = 'CONTINUATION';
+    } else if (c.type === 'OTHER' && inBlock) {
+      if (isSpecialRow(c.row.text, profile)) {
+        inBlock = false;
+      } else if (c.row.text.trim().length > 0 && !isHeaderRow(c.row.text)) {
+        c.type = 'CONTINUATION';
+      }
     }
   }
 
@@ -248,16 +254,18 @@ function buildPostNarrationTransactions(
     transactions,
     headerRowId: headerIdx !== -1 ? (rows[headerIdx]?.rowId ?? null) : null,
     bankProfileId: profile.id,
+    unconsumedPreBuffer: [],
   };
 }
 
 export function detectTransactions(
   rows: ReconstructedRow[],
   columns: ColumnDefinition[] = [],
-  forcedProfile?: BankProfile
+  forcedProfile?: BankProfile,
+  initialPreBuffer: ReconstructedRow[] = []
 ): TransactionDetectionResult {
   if (rows.length === 0) {
-    return { classifiedRows: [], transactions: [], headerRowId: null, bankProfileId: forcedProfile?.id ?? 'generic' };
+    return { classifiedRows: [], transactions: [], headerRowId: null, bankProfileId: forcedProfile?.id ?? 'generic', unconsumedPreBuffer: initialPreBuffer };
   }
 
   let headerIdx = -1;
@@ -275,7 +283,9 @@ export function detectTransactions(
   const profile = forcedProfile ?? detectBankProfile(headerRow);
 
   if (profile.narrationFlow === 'pre') {
-    return buildPreNarrationTransactions(rows, headerIdx, profile, columns);
+    // On pages with a new header, discard the carry buffer (new section starts)
+    const preBuffer = headerIdx !== -1 ? [] : initialPreBuffer;
+    return buildPreNarrationTransactions(rows, headerIdx, profile, columns, preBuffer);
   }
   return buildPostNarrationTransactions(rows, headerIdx, profile, columns);
 }

@@ -51,6 +51,17 @@
 - **Why**: Pages 2+ of bank statements have no header row. Without carry-forward, every page after page 1 gets Generic profile with 0 transactions.
 - **Watch out**: Carry-forward resets per document processing run. State is in-memory per request.
 
+### PDF Type Classification (2026-05-29)
+- **Decision**: Classify every PDF as `digital` or `scanned` immediately after LiteParse parse, persist as `pdfType` in `meta.json`
+- **Why**: Applying text-position pipeline to scanned PDFs is a category error. OCR output has noisy coordinates, merged rows, and no column headers → 72% recall on HDFC mini-statement (167/230 transactions). Classification is the prerequisite for routing to the correct extraction pipeline.
+- **Classifier signals** (in priority order):
+  1. `fontName === 'OCR'` ratio > 0.5 → scanned (LiteParse labels all OCR-detected text with this)
+  2. avg confidence < 0.85 across >30% of items → scanned (secondary confirmation)
+  3. Zero text items → scanned (image-only PDF)
+- **Implementation**: `backend/src/utils/pdfClassifier.ts` → `classifyPdf(parsedJson)` → `readPdfType(documentId)`
+- **Next step**: Route scanned PDFs to Claude vision extraction using already-existing screenshots in `storage/<id>/screenshots/`
+- **Watch out**: Classification happens at parse time. Re-parsing overwrites `pdfType`. Existing documents processed before this change default to `'digital'` via `readPdfType` fallback.
+
 ### Axis narration extraction — positional approach
 - **Decision**: Use `item.x` (left-edge) positioned between `DATE.xEnd` and `DEBIT.xStart`, not center-based column assignment
 - **Why**: Short narration text (e.g. "IIL-UTIMF SMS") has center cx that falls left of the NARRATION column boundary, landing in CHQ column. Left-edge is always 132.1 for Axis narrations regardless of text width.
@@ -59,6 +70,51 @@
 ### Route architecture
 - **Decision**: `/` = product upload → `/doc/[id]` = product viewer; `/debug` = debug upload → `/debug/viewer/[id]` = debug viewer
 - **Why**: Product and debug UIs coexist. Debug UI preserved untouched for development.
+
+---
+
+## Bug Fixes & Root Cause Log
+
+### Fix 1 — Row reconstruction snowball (`rowReconstruction.ts`)
+**Changed**: `anchor.height` → `prev.height` in tolerance calculation (line 49)
+
+**Root cause**: Tolerance = `max(item.height, anchor.height) * 0.6`. `anchor` is the *first* item in the current bucket. On HDFC page 8, a stray OCR artifact `"wo"` landed first with height=22.5pt. This set tolerance=13.5pt for every subsequent comparison on that page. Normal transaction rows are only 7pt tall with ~7pt gaps between them — all comfortably under 13.5pt — so the entire page collapsed into 3 mega-rows containing 20+ transactions each.
+
+**Fix**: Use `prev.height` (last item added) instead of `anchor.height`. Tolerance now reflects the two items actually being compared. Normal rows: max(7,7)*0.6 = 4.2pt tolerance. Gap between transactions ≈ 7pt > 4.2pt → correct split.
+
+**Result**: Page 8 went from 3 reconstructed rows to 70. Transaction count 153 → 210.
+
+---
+
+### Fix 2 — False header detection from summary block (`transactionDetection.ts`)
+**Changed**: Added `/statement\s+summary/i` to `HEADER_STOP_PATTERNS`
+
+**Root cause**: HDFC page 11 ends with a statement summary block:
+```
+Row 56: "STATEMENT SUMMARY :-"
+Row 57: "Opening Balance Dr Count Cr Count Debits Cred"
+```
+`isHeaderRow()` requires ≥2 keyword matches. Row 57 matches "balance" + "debit" + "credit" = 3 matches → detected as column header (headerIdx=57). `firstDataIdx` became 58. Only 2 rows after the summary were scanned for transactions, yielding 0. All 19 real transactions (rows 21–55) sat before the false header, classified as `OTHER`.
+
+**Fix**: Stop the header search when "STATEMENT SUMMARY" is encountered, same as "END OF STATEMENT". Header stays -1, all rows processed from index 0.
+
+**Result**: Page 11 went from 0 to 19 transactions. Total 210 → 229.
+
+---
+
+### Fix 3 — OCR DPI uplift (`parseService.ts`)
+**Changed**: LiteParse render DPI 150 → 400
+
+**Root cause**: At 150 DPI, Tesseract OCR on a degraded HDFC scan misread "06/01/2026" as "0601/2026" (confidence 0.56, missing slash). `DATE_RE` requires exact `DD/MM/YYYY` so the transaction was dropped entirely.
+
+**Result**: At 400 DPI confidence rises to 0.96, date reads correctly. Adds ~1 transaction for that specific OCR failure. Net: 229/230 detected (1 unrecoverable — slash physically missing in source scan pixel).
+
+---
+
+### Reverted — Heuristic amount extraction (`columnDetection.ts`, `columnService.ts`)
+Added then removed `positionalFillAmounts()` — a fallback that tried to extract debit/credit/balance via keyword regex when column detection returned no columns.
+
+**Why reverted**: HDFC transaction rows mix narration, ref numbers, and amounts in a single unstructured string. Keyword matching ("UPI" → credit, "ATM" → debit) gave wrong classifications (e.g. "FATMI" matched `atm` regex → false debit). Accuracy worse than leaving amounts blank. Amounts remain 0 for HDFC scanned — requires a different approach (layout-aware regex on last numeric token per row, or a dedicated HDFC scanned bank profile).
 
 ---
 
@@ -88,6 +144,9 @@
 | 14 — PNB Bank | ✅ Done | New `AMOUNT` + `DR_CR` column types, `Type(DR/CR)` resolution, page footer skip pattern |
 | 15 — Product UI | ✅ Done | `/doc/[id]` route, resizable left (PDF) + right (transactions) panels, auto-pipeline on load, bank badge + period in top bar |
 | 16 — Auto-pipeline | ✅ Done | Upload → redirect → pipeline starts automatically; no manual "Process" click needed for fresh uploads |
+| 17 — PDF Type Classifier | ✅ Done | `classifyPdf()` in `pdfClassifier.ts`, persisted as `pdfType` in `meta.json` after parse. Signals: fontName='OCR' ratio + avg confidence. |
+| 18 — Vision pipeline (scanned PDFs) | 🔲 Next | Route scanned PDFs → Claude vision API on screenshots → structured transaction JSON. Fixes HDFC mini-statement 167→230 recall. |
+| 19 — Balance continuity validator | 🔲 Planned | Chain prev_balance + credit - debit = balance for every tx. Flag breaks → per-tx confidence score. Universal (no summary page needed). |
 
 ---
 

@@ -133,7 +133,8 @@ export const HDFC_BANK_PROFILE: BankProfile = {
   name: 'HDFC Bank',
   detect: (headerText) => {
     const lower = headerText.toLowerCase();
-    return lower.includes('value dt') || lower.includes('narration');
+    return lower.includes('value dt') ||
+           (lower.includes('narration') && lower.includes('chq'));
   },
   narrationFlow: 'post',
   specialRows: [

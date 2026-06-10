@@ -5,6 +5,7 @@ import { getStoredRows } from './rowService';
 import { getStoredTransactions, runTransactionDetection } from './transactionService';
 import { detectColumns, fillTransactionAmounts, type ColumnDetectionResult, type ColumnDefinition } from '../reconstruction/columnDetection';
 import { detectTransactions, type DetectedTransaction } from '../reconstruction/transactionDetection';
+import type { ReconstructedRow } from '../reconstruction/rowReconstruction';
 import type { DocumentTransactions } from './transactionService';
 import { getBankProfileById } from '../reconstruction/bankProfiles';
 import { getParsedJson } from './parseService';
@@ -25,10 +26,18 @@ export function reconcileTransactions(txData: DocumentTransactions[]): void {
     if (i > 0) {
       const prev = allTx[i - 1]!;
       if (prev.balance && tx.balance) {
-        const expected = Math.round((parseAmt(prev.balance) - parseAmt(tx.debit) + parseAmt(tx.credit)) * 100) / 100;
-        const actual = Math.round(parseAmt(tx.balance) * 100) / 100;
-        if (Math.abs(expected - actual) > 0.01) {
-          reasons.push(`balance mismatch (expected ${expected.toFixed(2)}, got ${actual.toFixed(2)})`);
+        const prevBal = parseAmt(prev.balance);
+        const txBal   = parseAmt(tx.balance);
+        // Forward-chrono: prev.balance - tx.debit + tx.credit = tx.balance
+        const fwdExpected = Math.round((prevBal - parseAmt(tx.debit) + parseAmt(tx.credit)) * 100) / 100;
+        // Reverse-chrono (e.g. PNB): tx.balance - prev.debit + prev.credit = prev.balance
+        const revExpected = Math.round((txBal   - parseAmt(prev.debit) + parseAmt(prev.credit)) * 100) / 100;
+        const actual = Math.round(txBal * 100) / 100;
+        const prevActual = Math.round(prevBal * 100) / 100;
+        const fwdOk = Math.abs(fwdExpected - actual) <= 0.01;
+        const revOk = Math.abs(revExpected - prevActual) <= 0.01;
+        if (!fwdOk && !revOk) {
+          reasons.push(`balance mismatch (expected ${fwdExpected.toFixed(2)}, got ${actual.toFixed(2)})`);
         }
       }
     }
@@ -57,6 +66,8 @@ export function runColumnDetection(documentId: string): PageColumnResult[] {
   // Carry profile + columns across pages that lack a header (multi-page statements)
   let lastKnownColumns: ColumnDefinition[] = [];
   let lastKnownProfileId = 'generic';
+  // Carry pre-narration buffer for Axis-style banks across page boundaries
+  let carryPreBuffer: ReconstructedRow[] = [];
 
   for (const pr of pageRows) {
     const parsedPage = parsedJson.pages.find((p) => p.page === pr.page);
@@ -76,7 +87,8 @@ export function runColumnDetection(documentId: string): PageColumnResult[] {
 
       if (carryColumns.length > 0) {
         const carryProfile = getBankProfileById(lastKnownProfileId);
-        const refined = detectTransactions(pr.rows, carryColumns, carryProfile);
+        const refined = detectTransactions(pr.rows, carryColumns, carryProfile, carryPreBuffer);
+        carryPreBuffer = refined.unconsumedPreBuffer;
         txPage.result.classifiedRows = refined.classifiedRows;
         txPage.result.transactions = refined.transactions;
         txPage.result.bankProfileId = lastKnownProfileId;
@@ -97,8 +109,11 @@ export function runColumnDetection(documentId: string): PageColumnResult[] {
     pageResults.push({ page: pr.page, columns: colResult });
 
     // re-run transaction detection with column data so narration is clean
+    // new header = fresh section, discard any carried pre-narration buffer
+    carryPreBuffer = [];
     const refined = detectTransactions(pr.rows, colResult.columns);
-    lastKnownProfileId = refined.bankProfileId;
+    carryPreBuffer = refined.unconsumedPreBuffer;
+    if (refined.bankProfileId !== 'generic') lastKnownProfileId = refined.bankProfileId;
     txPage.result.classifiedRows = refined.classifiedRows;
     txPage.result.transactions = refined.transactions;
     txPage.result.bankProfileId = refined.bankProfileId;

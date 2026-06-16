@@ -34,9 +34,10 @@ const DATE_PATTERNS = [
   /^\d{2}\/\d{2}\/\d{4}/,
   /^\d{2}-\d{2}-\d{4}/,
   /^\d{2}\/\d{2}\/\d{2}(?!\d)/,
-  /^\d{1,2}\s+[A-Za-z]{3},?\s+\d{4}/,   // "1 Apr 2025" or "DD MMM, YYYY" (SBI/Kotak)
+  /^\d{1,2}\s+[A-Za-z]{3},?\s+\d{4}/,        // "1 Apr 2025" or "DD MMM, YYYY"
   /^\d{2}-[A-Za-z]{3}-\d{4}/,
   /^\d{1,2}\s+[A-Za-z]{3}\s+\d{1,2}\s+[A-Za-z]{3}/, // "17 Apr 17 Apr" (SBI pages 2+)
+  /^\d{1,2}\s+[A-Za-z]{3}\s+\d{2,3}\s+\d{1,2}(?!\d)/, // "01 JAN 202 5" or "01 JAN 20 25" (OCR split year)
 ];
 
 const HEADER_KEYWORDS = [
@@ -69,13 +70,16 @@ function extractDate(text: string): string {
   return '';
 }
 
+const AMOUNT_KEYWORDS = ['debit', 'credit', 'balance', 'amount'];
+
 function isHeaderRow(text: string): boolean {
   const lower = text.toLowerCase();
   let matches = 0;
   for (const kw of HEADER_KEYWORDS) {
     if (lower.includes(kw)) matches++;
   }
-  return matches >= 2;
+  const hasAmountCol = AMOUNT_KEYWORDS.some(kw => lower.includes(kw));
+  return matches >= 2 && hasAmountCol;
 }
 
 function isSpecialRow(text: string, profile: BankProfile): boolean {

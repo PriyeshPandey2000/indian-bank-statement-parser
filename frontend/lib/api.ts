@@ -88,3 +88,7 @@ export async function patchTransactions(
 export async function reconcile(documentId: string): Promise<DocumentTransactions[]> {
   return request<DocumentTransactions[]>(`/api/document/${documentId}/reconcile`, { method: 'POST' });
 }
+
+export async function extractTransactionsLlm(documentId: string): Promise<{ totalTransactions: number; suspiciousCount: number; pages: DocumentTransactions[] }> {
+  return request(`/api/document/${documentId}/extract-transactions-llm`, { method: 'POST' });
+}

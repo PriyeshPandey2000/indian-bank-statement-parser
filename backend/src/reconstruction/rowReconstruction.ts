@@ -44,10 +44,13 @@ export function reconstructRows(
 
   for (let i = 1; i < sorted.length; i++) {
     const item = sorted[i]!;
+    const anchor = currentBucket[0]!;
     const prev = currentBucket[currentBucket.length - 1]!;
+    // Use anchor for y-distance (prevents row drift) but item/prev height for tolerance
+    // so a tall OCR artifact at anchor position doesn't inflate tolerance for entire row
     const tolerance = Math.max(item.height, prev.height) * threshold;
 
-    if (Math.abs(yCenter(item) - yCenter(prev)) <= tolerance) {
+    if (Math.abs(yCenter(item) - yCenter(anchor)) <= tolerance) {
       currentBucket.push(item);
     } else {
       buckets.push(currentBucket);

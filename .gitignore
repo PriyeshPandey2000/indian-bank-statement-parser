@@ -25,3 +25,15 @@ frontend/out/
 # Logs
 *.log
 npm-debug.log*
+backend/test-statements/
+
+# ROI test artifacts
+backend/roi-crops/
+backend/roi-test.mjs
+backend/roi-verify.mjs
+
+# Planning / notes docs
+FEATURES.md
+FEATURE_RELIABILITY.md
+MANUAL_TEST.md
+TEST_RESULTS.md

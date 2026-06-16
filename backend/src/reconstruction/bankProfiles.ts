@@ -252,18 +252,21 @@ export const SBI_BANK_PROFILE: BankProfile = {
     { pattern: /^Date\s+No\.?\s*$/i, type: 'SKIP' },  // sub-header continuation row
   ],
   isTransactionRow: (row) => {
-    // First item in date column range (x 40-75) looks like "D Mon" or "D Mon YYYY"
-    const firstDateItem = row.items.find(i => i.x >= 40 && i.x <= 75);
-    return firstDateItem !== undefined && /^\d{1,2}\s+[A-Za-z]{3}/.test(firstDateItem.text.trim());
+    // SBI dates are split across multiple PDF items ("01" at x=38, "JAN" at x=52, "2025" at x=65)
+    // so we check the full reconstructed row text, not a single item
+    // Handles clean "01 JAN 2025", split day "0 1 JAN 2025", split year "01 JAN 202 5"
+    return /^\d{1,2}(\s+\d{1,2})?\s+[A-Za-z]{3}/.test(row.text.trim());
   },
   extractDateFromRow: (row) => {
-    // Full date "D Mon YYYY" present on page 1
+    // Full date with clean year
     const full = row.text.match(/\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/);
     if (full) return full[0];
-    // Partial date from first date item — year will be resolved from continuation row
-    const dateItem = row.items.find(i => i.x >= 40 && i.x <= 75);
-    const partial = dateItem?.text.match(/\d{1,2}\s+[A-Za-z]{3}/);
-    return partial ? partial[0] : '';
+    // Split year: "01 JAN 202 5" or "01 JAN 20 25"
+    const splitYear = row.text.match(/(\d{1,2}\s+[A-Za-z]{3})\s+(\d{2,3})\s+(\d{1,2})(?!\d)/);
+    if (splitYear) return `${splitYear[1]} ${splitYear[2]}${splitYear[3]}`;
+    // Partial date — year will be resolved from continuation row
+    const partial = row.text.match(/^\d{1,2}(\s+\d{1,2})?\s+[A-Za-z]{3}/);
+    return partial ? partial[0].replace(/\s+/g, ' ').trim() : '';
   },
   resolveDate: (partialDate, contRows) => {
     if (partialDate && !/\d{4}/.test(partialDate)) {
@@ -272,10 +275,33 @@ export const SBI_BANK_PROFILE: BankProfile = {
     }
     return partialDate;
   },
-  extractNarration: (_preRows, dataRow, columns) =>
-    positionalNarration(dataRow, columns, { skipYears: true, skipLongNums: true }),
-  extractContinuationNarration: (row, columns) =>
-    positionalNarration(row, columns, { skipYears: true, skipLongNums: true }),
+  extractNarration: (_preRows, dataRow, columns) => {
+    // SBI data: narration items sit at x≈127 but NARRATION column boundary starts at x≈139
+    // (header "Details" is indented further right than the data). Use amount column start
+    // as the right boundary and skip date-zone items (x < 100) instead.
+    const debitCol = columns.find(c => c.type === 'DEBIT');
+    const creditCol = columns.find(c => c.type === 'CREDIT');
+    const amountStart = (debitCol ?? creditCol)?.xStart ?? 9999;
+    return dataRow.items
+      .filter(i => i.x >= 100 && i.x < amountStart)
+      .filter(i => !/^[\d,]+(\.\d+)?$/.test(i.text.trim()) && i.text.trim() !== '-')
+      .map(i => i.text.trim())
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  },
+  extractContinuationNarration: (row, columns) => {
+    const debitCol = columns.find(c => c.type === 'DEBIT');
+    const creditCol = columns.find(c => c.type === 'CREDIT');
+    const amountStart = (debitCol ?? creditCol)?.xStart ?? 9999;
+    return row.items
+      .filter(i => i.x < amountStart)
+      .filter(i => !/^[\d,]+(\.\d+)?$/.test(i.text.trim()) && i.text.trim() !== '-')
+      .map(i => i.text.trim())
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  },
 };
 
 /**

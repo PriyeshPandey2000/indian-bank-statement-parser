@@ -6,19 +6,21 @@ import { exportCsvUrl } from '@/lib/api';
 const STAGE_LABELS: Record<PipelineStage, string> = {
   idle:      '',
   parsing:   'Parsing PDF…',
-  rows:      'Reconstructing rows…',
-  analysing: 'Detecting transactions…',
+  rows:      '',
+  analysing: 'Analysing transactions…',
   done:      '',
   error:     '',
 };
 
-const STAGES_ORDER: PipelineStage[] = ['parsing', 'rows', 'analysing', 'done'];
+const STAGES_ORDER: PipelineStage[] = ['parsing', 'analysing', 'done'];
 
 const BANK_NAMES: Record<string, string> = {
   axis:    'Axis Bank',
   hdfc:    'HDFC Bank',
   kotak:   'Kotak Mahindra',
   pnb:     'Punjab National Bank',
+  sbi:     'State Bank of India',
+  icici:   'ICICI Bank',
   generic: 'Generic',
 };
 
@@ -37,7 +39,7 @@ export default function ProcessBar({
 }: Props) {
   const isRunning = stage !== 'idle' && stage !== 'done' && stage !== 'error';
   const isDone = stage === 'done';
-  const bankLabel = bankProfileId ? (BANK_NAMES[bankProfileId] ?? bankProfileId) : null;
+  const bankLabel = bankProfileId && bankProfileId !== 'llm' ? (BANK_NAMES[bankProfileId] ?? null) : null;
 
   return (
     <div className="flex items-center justify-between px-4 py-2.5 bg-gray-900 border-b border-gray-800 shrink-0">

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PDF Parser Debugger",
-  description: "Debug and inspect bank statement PDF extraction",
+  title: "OpenParsed — Bank Statement Analyser",
+  description: "Upload any Indian bank statement PDF and get structured, verified transactions instantly.",
 };
 
 export default function RootLayout({

@@ -5,7 +5,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels';
 import { useViewerStore } from '@/lib/store/viewerStore';
 import {
   getParsedData, getTransactions,
-  parseDocument, extractTransactionsLlm,
+  parseDocument, extractTransactions,
 } from '@/lib/api';
 import ProcessBar from './ProcessBar';
 import PdfPanel from './PdfPanel';
@@ -39,7 +39,7 @@ export default function ProductShell({ documentId }: Props) {
       setParsedData(parsed);
 
       setStage('analysing');
-      await extractTransactionsLlm(documentId);
+      await extractTransactions(documentId);
       if (abortRef.current) return;
 
       const finalTxs = await getTransactions(documentId);

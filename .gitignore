@@ -1,5 +1,6 @@
 # Runtime storage — PDFs, screenshots, parsed output
 backend/storage/
+statements/
 
 # Tesseract OCR model (large binary, install separately)
 backend/eng.traineddata

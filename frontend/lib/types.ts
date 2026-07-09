@@ -80,6 +80,7 @@ export interface DetectedTransaction {
   balance: string;
   isSuspicious: boolean;
   suspiciousReason?: string;
+  rawValues?: string[];
 }
 
 export interface TransactionDetectionResult {
@@ -87,6 +88,8 @@ export interface TransactionDetectionResult {
   transactions: DetectedTransaction[];
   headerRowId: number | null;
   bankProfileId: string;
+  directColumns?: string[];
+  isDirectMode?: boolean;
 }
 
 export interface DocumentTransactions {

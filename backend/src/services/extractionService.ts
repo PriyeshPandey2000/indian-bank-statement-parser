@@ -4,6 +4,7 @@ import { getDocumentDir } from '../utils/storage';
 import { getParsedJson, readPdfType } from './parseService';
 import { runChandraOcr } from './chandraService';
 import { parseChandraJson } from './chandraParseService';
+import { parseDirectJson, buildDirectDocumentTransactions } from './directParseService';
 import type { DocumentTransactions } from './transactionService';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -223,6 +224,12 @@ function buildDocumentTransactions(
   return result;
 }
 
+async function runDirectExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {
+  const chandraJson = await runChandraOcr(documentId, apiKey, pipelineId);
+  const { columns, rows } = parseDirectJson(chandraJson);
+  return buildDirectDocumentTransactions(columns, rows);
+}
+
 async function runChandraExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {
   const chandraJson = await runChandraOcr(documentId, apiKey, pipelineId);
   const chandraRaw  = await parseChandraJson(chandraJson);
@@ -241,14 +248,19 @@ async function runChandraExtraction(documentId: string, apiKey: string, pipeline
   return buildDocumentTransactions(cleaned, flags, documentId, 'chandra');
 }
 
-export async function runExtraction(documentId: string): Promise<DocumentTransactions[]> {
-  const pdfType = readPdfType(documentId);
+export async function runExtraction(documentId: string, mode?: string): Promise<DocumentTransactions[]> {
+  const pdfType      = readPdfType(documentId);
+  const effectiveMode = mode ?? process.env['EXTRACTION_MODE'] ?? 'llm';
 
   if (pdfType === 'scanned') {
     const datalabKey        = process.env['DATALAB_API_KEY'];
     const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
     if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
     if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
+
+    if (effectiveMode === 'direct') {
+      return runDirectExtraction(documentId, datalabKey, datalabPipelineId);
+    }
     return runChandraExtraction(documentId, datalabKey, datalabPipelineId);
   }
 

@@ -19,10 +19,11 @@ interface Props {
   index: number;
   isSelected: boolean;
   isFocused: boolean;
+  isDirectMode?: boolean;
   onSelect: () => void;
 }
 
-export default function TransactionRow({ tx, index, isSelected, isFocused, onSelect }: Props) {
+export default function TransactionRow({ tx, index, isSelected, isFocused, isDirectMode, onSelect }: Props) {
   const [expanded, setExpanded] = useState(false);
   const setSelectedTransaction = useViewerStore((s) => s.setSelectedTransaction);
 
@@ -49,43 +50,53 @@ export default function TransactionRow({ tx, index, isSelected, isFocused, onSel
         onDoubleClick={() => setExpanded(e => !e)}
         className={`border-b border-gray-800/60 cursor-pointer transition-colors hover:bg-gray-800/50 group ${rowBg}`}
       >
-        {/* quality badge */}
-        <td className="pl-3 pr-1 py-2 w-12">
-          <ParseQualityBadge tx={tx} />
-        </td>
+        {isDirectMode && tx.rawValues ? (
+          tx.rawValues.map((val, i) => (
+            <td key={i} className="px-3 py-2 text-xs text-gray-200 whitespace-nowrap truncate max-w-xs" title={val}>
+              {val || <span className="text-gray-700">·</span>}
+            </td>
+          ))
+        ) : (
+          <>
+            {/* quality badge */}
+            <td className="pl-3 pr-1 py-2 w-12">
+              <ParseQualityBadge tx={tx} />
+            </td>
 
-        {/* date */}
-        <td className="px-2 py-2 text-xs font-mono text-gray-300 whitespace-nowrap w-24">
-          {tx.date || <span className="text-red-500/70 italic">no date</span>}
-        </td>
+            {/* date */}
+            <td className="px-2 py-2 text-xs font-mono text-gray-300 whitespace-nowrap w-24">
+              {tx.date || <span className="text-red-500/70 italic">no date</span>}
+            </td>
 
-        {/* narration */}
-        <td className="px-2 py-2 text-xs text-gray-200 max-w-0 w-full">
-          <div className="flex items-center gap-2">
-            <span className="truncate" title={tx.narration}>{tx.narration || <span className="text-gray-600 italic">empty</span>}</span>
-            {tx.sourceRows.length > 1 && (
-              <span className="shrink-0 text-[10px] text-blue-400/70 bg-blue-400/10 px-1 rounded">
-                +{tx.sourceRows.length - 1} rows
-              </span>
-            )}
-          </div>
-        </td>
+            {/* narration */}
+            <td className="px-2 py-2 text-xs text-gray-200 max-w-0 w-full">
+              <div className="flex items-center gap-2">
+                <span className="truncate" title={tx.narration}>{tx.narration || <span className="text-gray-600 italic">empty</span>}</span>
+                {tx.sourceRows.length > 1 && (
+                  <span className="shrink-0 text-[10px] text-blue-400/70 bg-blue-400/10 px-1 rounded">
+                    +{tx.sourceRows.length - 1} rows
+                  </span>
+                )}
+              </div>
+            </td>
 
-        {/* amounts */}
-        <AmountCell value={tx.debit}   color="text-red-400" />
-        <AmountCell value={tx.credit}  color="text-green-400" />
-        <AmountCell value={tx.balance} color="text-gray-300" />
+            {/* amounts */}
+            <AmountCell value={tx.debit}   color="text-red-400" />
+            <AmountCell value={tx.credit}  color="text-green-400" />
+            <AmountCell value={tx.balance} color="text-gray-300" />
 
-        {/* expand toggle */}
-        <td className="px-2 py-2 w-6 text-center">
-          <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
-            className="text-gray-600 hover:text-gray-300 transition-colors text-xs leading-none"
-            title="Expand row"
-          >
-            {expanded ? '▲' : '▼'}
-          </button>
-        </td>
+            {/* expand toggle */}
+            <td className="px-2 py-2 w-6 text-center">
+              <button
+                onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
+                className="text-gray-600 hover:text-gray-300 transition-colors text-xs leading-none"
+                title="Expand row"
+              >
+                {expanded ? '▲' : '▼'}
+              </button>
+            </td>
+          </>
+        )}
       </tr>
 
       {/* expanded detail */}

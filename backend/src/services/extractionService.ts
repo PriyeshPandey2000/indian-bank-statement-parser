@@ -126,6 +126,14 @@ ${pageText}`;
   return parsed as Omit<RawTx, 'page'>[];
 }
 
+function getDatalabCredentials(): { key: string; pipelineId: string } {
+  const key        = process.env['DATALAB_API_KEY'];
+  const pipelineId = process.env['DATALAB_PIPELINE_ID'];
+  if (!key)        throw new Error('DATALAB_API_KEY not configured');
+  if (!pipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
+  return { key, pipelineId };
+}
+
 const HEADER_RE = /^(date\s|narration\s*$|description\s*$|particulars\s*$|ref\.?\s*no|cheque\s*no|tran\.?\s*(date|id|no)|txn\.?\s*(date|id|no)|value\s*dt|sl\.?\s*no\.?)/i;
 
 function postProcess(txns: RawTx[]): RawTx[] {
@@ -254,19 +262,13 @@ export async function runExtraction(documentId: string, mode?: string): Promise<
 
   // direct mode: Datalab OCR → parse HTML tables directly, no LLM — works for both digital and scanned
   if (effectiveMode === 'direct') {
-    const datalabKey        = process.env['DATALAB_API_KEY'];
-    const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
-    if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
-    if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
-    return runDirectExtraction(documentId, datalabKey, datalabPipelineId);
+    const { key, pipelineId } = getDatalabCredentials();
+    return runDirectExtraction(documentId, key, pipelineId);
   }
 
   if (pdfType === 'scanned') {
-    const datalabKey        = process.env['DATALAB_API_KEY'];
-    const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
-    if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
-    if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
-    return runChandraExtraction(documentId, datalabKey, datalabPipelineId);
+    const { key, pipelineId } = getDatalabCredentials();
+    return runChandraExtraction(documentId, key, pipelineId);
   }
 
   const parsedJson = getParsedJson(documentId);

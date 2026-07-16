@@ -99,8 +99,8 @@ export default function TransactionRow({ tx, index, isSelected, isFocused, isDir
         )}
       </tr>
 
-      {/* expanded detail */}
-      {expanded && (
+      {/* expanded detail — hidden in direct mode (no narration/debit/credit fields to show) */}
+      {expanded && !isDirectMode && (
         <tr className={`border-b border-gray-700 ${tx.isSuspicious ? 'border-l-2 border-l-orange-500' : ''}`}>
           <td colSpan={7} className="px-4 py-3 bg-gray-900/80">
             <div className="grid grid-cols-2 gap-4 text-xs">

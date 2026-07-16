@@ -26,6 +26,12 @@ function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -79,6 +85,9 @@ function isTransactionRow(cells: string[], dateCol: number): boolean {
 
 export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows: DirectRow[] } {
   const json = chandraJson as ChandraJson;
+  if (!Array.isArray(json?.children)) {
+    throw new Error('Datalab response missing `children` array — unexpected response shape');
+  }
   let columns: string[] = [];
   let dateCol = -1;
   const rows: DirectRow[] = [];
@@ -112,7 +121,7 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
 
       for (const cells of dataRows) {
         if (!isTransactionRow(cells, dateCol)) continue;
-        const colCount = Math.max(columns.length, cells.length);
+        const colCount = columns.length;
         rows.push({ values: Array.from({ length: colCount }, (_, i) => cells[i] ?? ''), page: pageNum });
       }
     }

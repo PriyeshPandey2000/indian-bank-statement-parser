@@ -252,15 +252,20 @@ export async function runExtraction(documentId: string, mode?: string): Promise<
   const pdfType      = readPdfType(documentId);
   const effectiveMode = mode ?? process.env['EXTRACTION_MODE'] ?? 'llm';
 
+  // direct mode: Datalab OCR → parse HTML tables directly, no LLM — works for both digital and scanned
+  if (effectiveMode === 'direct') {
+    const datalabKey        = process.env['DATALAB_API_KEY'];
+    const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
+    if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
+    if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
+    return runDirectExtraction(documentId, datalabKey, datalabPipelineId);
+  }
+
   if (pdfType === 'scanned') {
     const datalabKey        = process.env['DATALAB_API_KEY'];
     const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
     if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
     if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
-
-    if (effectiveMode === 'direct') {
-      return runDirectExtraction(documentId, datalabKey, datalabPipelineId);
-    }
     return runChandraExtraction(documentId, datalabKey, datalabPipelineId);
   }
 

@@ -93,6 +93,15 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
       const { headers, dataRows } = parseTable(block.html);
 
       if (columns.length === 0 && headers.length > 0) {
+        // Skip tables that aren't transaction tables — must have a date header AND an amount header.
+        // Prevents locking onto account-info or legend tables that appear before the transaction table.
+        const hasDateHeader   = headers.some(h => /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h));
+        const hasAmountHeader = headers.some(h => /withdrawal|deposit|debit|credit|\bdr\b|\bcr\b|amount|balance/i.test(h));
+        if (!hasDateHeader || !hasAmountHeader) {
+          console.log(`[DirectParser] skipping non-transaction table: ${JSON.stringify(headers)}`);
+          continue;
+        }
+
         columns = headers;
         dateCol = columns.findIndex(h =>
           /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h)

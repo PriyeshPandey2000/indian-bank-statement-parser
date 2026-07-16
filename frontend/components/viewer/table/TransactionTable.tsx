@@ -94,7 +94,9 @@ export default function TransactionTable() {
   const toggleTxOverlay   = useViewerStore(s => s.toggleTxOverlay);
 
   const allTx: DetectedTransaction[] = txData?.flatMap(p => p.result.transactions) ?? [];
-  const bankProfileId = txData?.[0]?.result.bankProfileId;
+  const bankProfileId  = txData?.[0]?.result.bankProfileId;
+  const isDirectMode   = txData?.[0]?.result.isDirectMode ?? false;
+  const directColumns  = txData?.[0]?.result.directColumns ?? [];
 
   // sort
   const sorted = [...allTx].sort((a, b) => {
@@ -245,13 +247,23 @@ export default function TransactionTable() {
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 bg-gray-900 z-10 shadow-sm">
                 <tr className="border-b border-gray-700">
-                  <th className="pl-3 pr-1 py-2 w-12 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Quality</th>
-                  <SortHeader label="Date"    sortKey="date"    current={sortKey} dir={sortDir} onSort={handleSort} />
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-full">Description</th>
-                  <SortHeader label="Debit"   sortKey="debit"   current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
-                  <SortHeader label="Credit"  sortKey="credit"  current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
-                  <SortHeader label="Balance" sortKey="balance" current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
-                  <th className="px-2 py-2 w-6" />
+                  {isDirectMode ? (
+                    directColumns.map((col, i) => (
+                      <th key={i} className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">
+                        {col || `Col ${i + 1}`}
+                      </th>
+                    ))
+                  ) : (
+                    <>
+                      <th className="pl-3 pr-1 py-2 w-12 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600">Quality</th>
+                      <SortHeader label="Date"    sortKey="date"    current={sortKey} dir={sortDir} onSort={handleSort} />
+                      <th className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-full">Description</th>
+                      <SortHeader label="Debit"   sortKey="debit"   current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
+                      <SortHeader label="Credit"  sortKey="credit"  current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
+                      <SortHeader label="Balance" sortKey="balance" current={sortKey} dir={sortDir} onSort={handleSort} align="right" />
+                      <th className="px-2 py-2 w-6" />
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -265,6 +277,7 @@ export default function TransactionTable() {
                     index={idx}
                     isSelected={selectedTx?.id === tx.id}
                     isFocused={focusedIdx === idx}
+                    isDirectMode={isDirectMode}
                     onSelect={() => {
                       setFocusedIdx(idx);
                       setSelectedTx(selectedTx?.id === tx.id ? null : tx);

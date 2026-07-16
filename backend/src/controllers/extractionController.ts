@@ -11,7 +11,8 @@ export async function extractTransactions(req: Request, res: Response): Promise<
   }
 
   try {
-    const result = await runExtraction(id);
+    const mode = typeof req.query['mode'] === 'string' ? req.query['mode'] : undefined;
+    const result = await runExtraction(id, mode);
     const total = result.reduce((s, p) => s + p.result.transactions.length, 0);
     const suspicious = result.reduce((s, p) => s + p.result.transactions.filter(t => t.isSuspicious).length, 0);
     res.json({ documentId: id, totalTransactions: total, suspiciousCount: suspicious, pages: result });

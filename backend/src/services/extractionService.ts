@@ -4,6 +4,7 @@ import { getDocumentDir } from '../utils/storage';
 import { getParsedJson, readPdfType } from './parseService';
 import { runChandraOcr } from './chandraService';
 import { parseChandraJson } from './chandraParseService';
+import { parseDirectJson, buildDirectDocumentTransactions } from './directParseService';
 import type { DocumentTransactions } from './transactionService';
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
@@ -125,6 +126,14 @@ ${pageText}`;
   return parsed as Omit<RawTx, 'page'>[];
 }
 
+function getDatalabCredentials(): { key: string; pipelineId: string } {
+  const key        = process.env['DATALAB_API_KEY'];
+  const pipelineId = process.env['DATALAB_PIPELINE_ID'];
+  if (!key)        throw new Error('DATALAB_API_KEY not configured');
+  if (!pipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
+  return { key, pipelineId };
+}
+
 const HEADER_RE = /^(date\s|narration\s*$|description\s*$|particulars\s*$|ref\.?\s*no|cheque\s*no|tran\.?\s*(date|id|no)|txn\.?\s*(date|id|no)|value\s*dt|sl\.?\s*no\.?)/i;
 
 function postProcess(txns: RawTx[]): RawTx[] {
@@ -223,6 +232,12 @@ function buildDocumentTransactions(
   return result;
 }
 
+async function runDirectExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {
+  const chandraJson = await runChandraOcr(documentId, apiKey, pipelineId);
+  const { columns, rows } = parseDirectJson(chandraJson);
+  return buildDirectDocumentTransactions(columns, rows);
+}
+
 async function runChandraExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {
   const chandraJson = await runChandraOcr(documentId, apiKey, pipelineId);
   const chandraRaw  = await parseChandraJson(chandraJson);
@@ -241,15 +256,19 @@ async function runChandraExtraction(documentId: string, apiKey: string, pipeline
   return buildDocumentTransactions(cleaned, flags, documentId, 'chandra');
 }
 
-export async function runExtraction(documentId: string): Promise<DocumentTransactions[]> {
-  const pdfType = readPdfType(documentId);
+export async function runExtraction(documentId: string, mode?: string): Promise<DocumentTransactions[]> {
+  const pdfType      = readPdfType(documentId);
+  const effectiveMode = mode ?? process.env['EXTRACTION_MODE'] ?? 'llm';
+
+  // direct mode: Datalab OCR → parse HTML tables directly, no LLM — works for both digital and scanned
+  if (effectiveMode === 'direct') {
+    const { key, pipelineId } = getDatalabCredentials();
+    return runDirectExtraction(documentId, key, pipelineId);
+  }
 
   if (pdfType === 'scanned') {
-    const datalabKey        = process.env['DATALAB_API_KEY'];
-    const datalabPipelineId = process.env['DATALAB_PIPELINE_ID'];
-    if (!datalabKey)        throw new Error('DATALAB_API_KEY not configured');
-    if (!datalabPipelineId) throw new Error('DATALAB_PIPELINE_ID not configured');
-    return runChandraExtraction(documentId, datalabKey, datalabPipelineId);
+    const { key, pipelineId } = getDatalabCredentials();
+    return runChandraExtraction(documentId, key, pipelineId);
   }
 
   const parsedJson = getParsedJson(documentId);

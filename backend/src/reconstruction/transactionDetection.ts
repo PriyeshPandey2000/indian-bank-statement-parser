@@ -20,6 +20,7 @@ export interface DetectedTransaction {
   balance: string;
   isSuspicious: boolean;
   suspiciousReason?: string;
+  rawValues?: string[];
 }
 
 export interface TransactionDetectionResult {
@@ -28,6 +29,8 @@ export interface TransactionDetectionResult {
   headerRowId: number | null;
   bankProfileId: string;
   unconsumedPreBuffer: ReconstructedRow[];
+  directColumns?: string[];
+  isDirectMode?: boolean;
 }
 
 const DATE_PATTERNS = [

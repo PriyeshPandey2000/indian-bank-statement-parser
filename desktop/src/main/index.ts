@@ -41,7 +41,7 @@ async function startBackend(): Promise<void> {
     ? join(__dirname, '../../../backend/src/index.ts')
     : join(process.resourcesPath, 'backend/index.js')
 
-  const cmd = isDev ? 'npx' : 'node'
+  const cmd = isDev ? 'npx' : process.execPath
   const args = isDev ? ['tsx', backendEntry] : [backendEntry]
   const backendDir = isDev
     ? join(__dirname, '../../../backend')
@@ -49,7 +49,12 @@ async function startBackend(): Promise<void> {
 
   backendProcess = spawn(cmd, args, {
     cwd: backendDir,
-    env: { ...process.env, PORT: String(backendPort), STORAGE_DIR: app.getPath('userData') },
+    env: {
+      ...process.env,
+      PORT: String(backendPort),
+      STORAGE_DIR: app.getPath('userData'),
+      ...(!isDev && { ELECTRON_RUN_AS_NODE: '1' }),
+    },
     stdio: 'pipe',
   })
 
@@ -95,8 +100,8 @@ function createWindow(port: number): void {
 app.setName('OpenParsed')
 
 app.whenReady().then(async () => {
-  // Load .env — search from app path upward
   for (const p of [
+    join(process.resourcesPath, 'backend/.env'),
     join(app.getAppPath(), '../../.env'),
     join(app.getAppPath(), '../.env'),
     join(__dirname, '../../../../.env'),

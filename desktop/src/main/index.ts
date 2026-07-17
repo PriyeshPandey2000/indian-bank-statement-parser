@@ -49,7 +49,7 @@ async function startBackend(): Promise<void> {
 
   backendProcess = spawn(cmd, args, {
     cwd: backendDir,
-    env: { ...process.env, PORT: String(backendPort) },
+    env: { ...process.env, PORT: String(backendPort), STORAGE_DIR: app.getPath('userData') },
     stdio: 'pipe',
   })
 

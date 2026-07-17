@@ -27,7 +27,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-const STORAGE_ROOT = path.resolve(__dirname, '../storage');
+const STORAGE_ROOT = process.env['STORAGE_DIR'] ?? path.resolve(__dirname, '../storage');
 app.get('/api/documents', (_req, res) => {
   try {
     if (!fs.existsSync(STORAGE_ROOT)) { res.json([]); return; }

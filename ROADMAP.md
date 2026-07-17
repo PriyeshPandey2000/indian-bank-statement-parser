@@ -2,15 +2,15 @@
 
 ## Electron Desktop App
 
-### In Progress
-- [ ] UI polish (padding, sidebar, buttons)
+### Done
+- [x] UI polish — sidebar, buttons, titlebar, traffic lights
+- [x] Port race condition — `ipcMain.handle` + `waitForBackend` TCP polling
+- [x] Password-protected PDF — password input with detection in Electron UI
+- [x] `openExternal` URL validation — protocol allowlist before `shell.openExternal`
 
 ### Pending
-- [ ] Port race condition — block uploads until IPC port arrives from main process
-- [ ] Password-protected PDF support — add password input field in upload screen (web app has this, Electron doesn't)
-- [ ] userData storage — move `backend/storage/` to `app.getPath('userData')` so data survives app updates/reinstalls
+- [x] userData storage — move `backend/storage/` to `app.getPath('userData')` so data survives app updates/reinstalls
 - [ ] Windows cross-platform fix — `env -u ELECTRON_RUN_AS_NODE` is Unix-only, need cross-platform equivalent before Windows build
-- [x] `openExternal` URL validation — validate protocol before calling `shell.openExternal` to prevent protocol-handler abuse
 - [ ] Race condition on rapid doc selection — use `AbortController` in `selectDoc` so a slow first request can't overwrite a newer selection
 - [ ] Retry failed extractions — documents with missing `transactions.json` silently show nothing; need retry action or error state in sidebar
 - [ ] Atomic JSON writes — write metadata/transactions to a temp file then rename to avoid truncation on crash

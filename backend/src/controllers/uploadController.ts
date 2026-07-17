@@ -23,8 +23,9 @@ async function checkLicense(pages: number): Promise<{ allowed: boolean; reason?:
       body: JSON.stringify({ token, pages }),
       signal: controller.signal,
     });
-    if (!res.ok) return { allowed: true };
-    return await res.json() as { allowed: boolean; reason?: string; pagesUsed?: number; pagesLimit?: number };
+    if (res.status >= 500) return { allowed: true }; // server error → fail open
+    const data = await res.json() as { allowed: boolean; reason?: string; pagesUsed?: number; pagesLimit?: number };
+    return data;
   } catch {
     return { allowed: true };
   } finally {

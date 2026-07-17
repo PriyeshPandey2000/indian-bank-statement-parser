@@ -7,7 +7,6 @@ declare global {
   interface Window {
     api: {
       getBackendPort: () => Promise<number>
-      getLicenseConfig: () => Promise<{ url: string | null; token: string | null }>
     }
   }
 }
@@ -55,7 +54,6 @@ function timeAgo(iso: string): string {
 export default function App() {
   const [port, setPort] = useState<number | null>(null)
   const portReady = port !== null
-  const [licenseConfig, setLicenseConfig] = useState<{ url: string | null; token: string | null } | null>(null)
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
   const [pagesUsed, setPagesUsed] = useState<number | null>(null)
@@ -77,45 +75,9 @@ export default function App() {
 
   useEffect(() => {
     window.api?.getBackendPort().then(setPort)
-    window.api?.getLicenseConfig().then(setLicenseConfig)
   }, [])
-
-  useEffect(() => {
-    if (licenseConfig?.url && licenseConfig?.token) {
-      checkLicense(0)
-    }
-  }, [licenseConfig, checkLicense])
 
   const apiBase = port !== null ? `http://localhost:${port}/api` : null
-
-  const countPdfPages = useCallback(async (file: File): Promise<number> => {
-    const text = new TextDecoder('latin1').decode(await file.arrayBuffer())
-    const matches = text.match(/\/Type\s*\/Page[^s]/g)
-    return Math.max(matches?.length ?? 1, 1)
-  }, [])
-
-  const checkLicense = useCallback(async (pages: number): Promise<{ allowed: boolean; reason?: string }> => {
-    if (!licenseConfig?.url || !licenseConfig?.token) return { allowed: true }
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 5000)
-    try {
-      const res = await fetch(licenseConfig.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: licenseConfig.token, pages }),
-        signal: controller.signal,
-      })
-      if (!res.ok) return { allowed: true }
-      const data = await res.json() as { allowed: boolean; reason?: string; pagesUsed?: number; pagesLimit?: number }
-      if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed)
-      if (data.pagesLimit !== undefined) setPagesLimit(data.pagesLimit)
-      return data
-    } catch {
-      return { allowed: true }
-    } finally {
-      clearTimeout(timer)
-    }
-  }, [licenseConfig])
 
   const checkEncrypted = useCallback(async (file: File): Promise<boolean> => {
     const decode = async (blob: Blob) => new TextDecoder('latin1').decode(await blob.arrayBuffer())
@@ -176,23 +138,24 @@ export default function App() {
     setStagedFile(null)
     setStatus('uploading')
     try {
-      const pageCount = await countPdfPages(file)
-      const license = await checkLicense(pageCount)
-      if (!license.allowed) {
-        const msg = license.reason === 'limit_reached'
-          ? 'Page limit reached. Contact Priyesh to continue.'
-          : 'Access denied. Contact Priyesh to activate your license.'
-        setLicenseBlocked(true)
-        setLicenseMessage(msg)
-        setStatus('idle')
-        return
-      }
       const form = new FormData()
       form.append('file', file)
       if (password) form.append('password', password)
       const uploadRes = await fetch(`${apiBase}/upload`, { method: 'POST', body: form })
+      if (uploadRes.status === 402) {
+        const body = await uploadRes.json() as { error: string; reason?: string; pagesUsed?: number; pagesLimit?: number }
+        if (body.pagesUsed !== undefined) setPagesUsed(body.pagesUsed)
+        if (body.pagesLimit !== undefined) setPagesLimit(body.pagesLimit)
+        setLicenseBlocked(true)
+        setLicenseMessage(body.error)
+        setStatus('idle')
+        return
+      }
       if (!uploadRes.ok) throw new Error('Upload failed')
-      const { documentId: id } = await uploadRes.json() as { documentId: string }
+      const uploadData = await uploadRes.json() as { documentId: string; pagesUsed?: number; pagesLimit?: number }
+      if (uploadData.pagesUsed !== undefined) setPagesUsed(uploadData.pagesUsed)
+      if (uploadData.pagesLimit !== undefined) setPagesLimit(uploadData.pagesLimit)
+      const id = uploadData.documentId
       setSelectedId(id)
       setStagedFile(null)
       await loadDocs()
@@ -207,7 +170,7 @@ export default function App() {
       setError(e instanceof Error ? e.message : 'Something went wrong')
       setStatus('error')
     }
-  }, [apiBase, stagedFile, password, loadDocs, countPdfPages, checkLicense])
+  }, [apiBase, stagedFile, password, loadDocs])
 
   const handleCancelStaged = useCallback(() => {
     setStagedFile(null)

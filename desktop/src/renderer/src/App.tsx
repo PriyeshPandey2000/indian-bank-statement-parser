@@ -5,7 +5,9 @@ import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff
 
 declare global {
   interface Window {
-    api: { getBackendPort: () => Promise<number> }
+    api: {
+      getBackendPort: () => Promise<number>
+    }
   }
 }
 
@@ -52,6 +54,10 @@ function timeAgo(iso: string): string {
 export default function App() {
   const [port, setPort] = useState<number | null>(null)
   const portReady = port !== null
+  const [licenseBlocked, setLicenseBlocked] = useState(false)
+  const [licenseMessage, setLicenseMessage] = useState('')
+  const [pagesUsed, setPagesUsed] = useState<number | null>(null)
+  const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
   const [docs, setDocs] = useState<DocMeta[]>([])
   const [search, setSearch] = useState('')
@@ -136,8 +142,20 @@ export default function App() {
       form.append('file', file)
       if (password) form.append('password', password)
       const uploadRes = await fetch(`${apiBase}/upload`, { method: 'POST', body: form })
+      if (uploadRes.status === 402) {
+        const body = await uploadRes.json() as { error: string; reason?: string; pagesUsed?: number; pagesLimit?: number }
+        if (body.pagesUsed !== undefined) setPagesUsed(body.pagesUsed)
+        if (body.pagesLimit !== undefined) setPagesLimit(body.pagesLimit)
+        setLicenseBlocked(true)
+        setLicenseMessage(body.error)
+        setStatus('idle')
+        return
+      }
       if (!uploadRes.ok) throw new Error('Upload failed')
-      const { documentId: id } = await uploadRes.json() as { documentId: string }
+      const uploadData = await uploadRes.json() as { documentId: string; pagesUsed?: number; pagesLimit?: number }
+      if (uploadData.pagesUsed !== undefined) setPagesUsed(uploadData.pagesUsed)
+      if (uploadData.pagesLimit !== undefined) setPagesLimit(uploadData.pagesLimit)
+      const id = uploadData.documentId
       setSelectedId(id)
       setStagedFile(null)
       await loadDocs()
@@ -179,6 +197,21 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
+      {licenseBlocked && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/95 backdrop-blur">
+          <div className="flex flex-col items-center gap-4 max-w-sm text-center px-8">
+            <div className="text-2xl">🔒</div>
+            <div className="text-sm font-semibold text-neutral-200">Trial Limit Reached</div>
+            <div className="text-xs text-neutral-500 leading-relaxed">{licenseMessage}</div>
+            <a
+              href="mailto:priyeshpandey2000@gmail.com"
+              className="text-xs font-medium px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-all"
+            >
+              Contact Priyesh
+            </a>
+          </div>
+        </div>
+      )}
       {/* Titlebar */}
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}
@@ -251,7 +284,21 @@ export default function App() {
             })}
           </div>
 
-          <div className="border-t border-neutral-800/60 px-3 py-2">
+          <div className="border-t border-neutral-800/60 px-3 py-2 flex flex-col gap-1.5">
+            {pagesUsed !== null && pagesLimit !== null && (
+              <div className="w-full">
+                <div className="flex justify-between text-[10px] text-neutral-600 mb-1">
+                  <span>{pagesUsed} / {pagesLimit} pages used</span>
+                  <span>{pagesLimit - pagesUsed} left</span>
+                </div>
+                <div className="h-1 w-full rounded-full bg-neutral-800">
+                  <div
+                    className={`h-1 rounded-full transition-all ${pagesUsed / pagesLimit > 0.8 ? 'bg-orange-500' : 'bg-blue-500'}`}
+                    style={{ width: `${Math.min((pagesUsed / pagesLimit) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
               <Settings size={11} />
               Settings

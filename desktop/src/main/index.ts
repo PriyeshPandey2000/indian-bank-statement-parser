@@ -108,6 +108,10 @@ app.whenReady().then(async () => {
   await waitForBackend(backendPort)
 
   ipcMain.handle('get-backend-port', () => backendPort)
+  ipcMain.handle('get-license-config', () => ({
+    url: process.env['LICENSE_URL'] ?? null,
+    token: process.env['LICENSE_TOKEN'] ?? null,
+  }))
   createWindow(backendPort)
 
   app.on('activate', () => {

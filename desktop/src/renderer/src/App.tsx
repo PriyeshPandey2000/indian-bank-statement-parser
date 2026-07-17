@@ -5,7 +5,10 @@ import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff
 
 declare global {
   interface Window {
-    api: { getBackendPort: () => Promise<number> }
+    api: {
+      getBackendPort: () => Promise<number>
+      getLicenseConfig: () => Promise<{ url: string | null; token: string | null }>
+    }
   }
 }
 
@@ -52,6 +55,9 @@ function timeAgo(iso: string): string {
 export default function App() {
   const [port, setPort] = useState<number | null>(null)
   const portReady = port !== null
+  const [licenseConfig, setLicenseConfig] = useState<{ url: string | null; token: string | null } | null>(null)
+  const [licenseBlocked, setLicenseBlocked] = useState(false)
+  const [licenseMessage, setLicenseMessage] = useState('')
 
   const [docs, setDocs] = useState<DocMeta[]>([])
   const [search, setSearch] = useState('')
@@ -69,9 +75,32 @@ export default function App() {
 
   useEffect(() => {
     window.api?.getBackendPort().then(setPort)
+    window.api?.getLicenseConfig().then(setLicenseConfig)
   }, [])
 
   const apiBase = port !== null ? `http://localhost:${port}/api` : null
+
+  const countPdfPages = useCallback(async (file: File): Promise<number> => {
+    const text = new TextDecoder('latin1').decode(await file.arrayBuffer())
+    const matches = text.match(/\/Type\s*\/Page[^s]/g)
+    return Math.max(matches?.length ?? 1, 1)
+  }, [])
+
+  const checkLicense = useCallback(async (pages: number): Promise<{ allowed: boolean; reason?: string }> => {
+    if (!licenseConfig?.url || !licenseConfig?.token) return { allowed: true }
+    try {
+      const res = await fetch(licenseConfig.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: licenseConfig.token, pages }),
+      })
+      const data = await res.json() as { allowed: boolean; reason?: string; pagesUsed?: number; pagesLimit?: number }
+      return data
+    } catch {
+      // Offline or server unreachable — fail open
+      return { allowed: true }
+    }
+  }, [licenseConfig])
 
   const checkEncrypted = useCallback(async (file: File): Promise<boolean> => {
     const decode = async (blob: Blob) => new TextDecoder('latin1').decode(await blob.arrayBuffer())
@@ -132,6 +161,17 @@ export default function App() {
     setStagedFile(null)
     setStatus('uploading')
     try {
+      const pageCount = await countPdfPages(file)
+      const license = await checkLicense(pageCount)
+      if (!license.allowed) {
+        const msg = license.reason === 'limit_reached'
+          ? 'Page limit reached. Contact Priyesh to continue.'
+          : 'Access denied. Contact Priyesh to activate your license.'
+        setLicenseBlocked(true)
+        setLicenseMessage(msg)
+        setStatus('idle')
+        return
+      }
       const form = new FormData()
       form.append('file', file)
       if (password) form.append('password', password)
@@ -152,7 +192,7 @@ export default function App() {
       setError(e instanceof Error ? e.message : 'Something went wrong')
       setStatus('error')
     }
-  }, [apiBase, stagedFile, password, loadDocs])
+  }, [apiBase, stagedFile, password, loadDocs, countPdfPages, checkLicense])
 
   const handleCancelStaged = useCallback(() => {
     setStagedFile(null)
@@ -179,6 +219,21 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
+      {licenseBlocked && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/95 backdrop-blur">
+          <div className="flex flex-col items-center gap-4 max-w-sm text-center px-8">
+            <div className="text-2xl">🔒</div>
+            <div className="text-sm font-semibold text-neutral-200">Trial Limit Reached</div>
+            <div className="text-xs text-neutral-500 leading-relaxed">{licenseMessage}</div>
+            <a
+              href="mailto:priyeshpandey2000@gmail.com"
+              className="text-xs font-medium px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-all"
+            >
+              Contact Priyesh
+            </a>
+          </div>
+        </div>
+      )}
       {/* Titlebar */}
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}

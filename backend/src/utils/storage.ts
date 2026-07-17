@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 
-const STORAGE_ROOT = path.resolve(__dirname, '../../storage');
+const STORAGE_ROOT = process.env['STORAGE_DIR'] ?? path.resolve(__dirname, '../../storage');
 
 export function getDocumentDir(documentId: string): string {
   return path.join(STORAGE_ROOT, documentId);

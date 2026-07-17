@@ -3,7 +3,7 @@ import path from 'path';
 
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const COLMAP_CACHE_PATH = path.join(process.cwd(), 'storage', 'colmap_cache.json');
+const COLMAP_CACHE_PATH = path.join(process.env['STORAGE_DIR'] ?? path.resolve(__dirname, '../../storage'), 'colmap_cache.json');
 
 interface ChandraBlock {
   block_type: string;

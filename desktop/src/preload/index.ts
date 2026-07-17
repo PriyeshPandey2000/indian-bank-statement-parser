@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
-  onBackendPort(cb: (port: number) => void): void {
-    ipcRenderer.on('backend-port', (_event, port: number) => cb(port))
+  getBackendPort(): Promise<number> {
+    return ipcRenderer.invoke('get-backend-port')
   },
 }
 

@@ -19,16 +19,20 @@ export function exportDocumentCsv(req: Request, res: Response): void {
 
   try {
     const pages = getStoredTransactions(id);
+    const isDirectMode = pages[0]?.result.isDirectMode ?? false;
     const transactions = pages.flatMap((p) => p.result.transactions);
 
-    const header = ['Date', 'Narration', 'Debit', 'Credit', 'Balance'];
-    const rows = transactions.map((tx) => [
-      tx.date,
-      tx.narration,
-      tx.debit,
-      tx.credit,
-      tx.balance,
-    ].map(escCsv).join(','));
+    let header: string[];
+    let rows: string[];
+
+    if (isDirectMode) {
+      const columns = (pages[0]?.result as any).directColumns as string[] ?? [];
+      header = columns.length ? columns : transactions[0]?.rawValues?.map((_, i) => `Col ${i + 1}`) ?? [];
+      rows = transactions.map((tx) => (tx.rawValues ?? []).map(escCsv).join(','));
+    } else {
+      header = ['Date', 'Narration', 'Debit', 'Credit', 'Balance'];
+      rows = transactions.map((tx) => [tx.date, tx.narration, tx.debit, tx.credit, tx.balance].map(escCsv).join(','));
+    }
 
     const csv = [header.join(','), ...rows].join('\n');
 

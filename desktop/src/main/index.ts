@@ -1,7 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { spawn, ChildProcess } from 'child_process'
-import { createServer } from 'net'
+import { createServer, createConnection } from 'net'
 import * as dotenv from 'dotenv'
 
 let backendProcess: ChildProcess | null = null
@@ -17,6 +17,22 @@ function getFreePort(): Promise<number> {
   })
 }
 
+function waitForBackend(port: number, timeoutMs = 15000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs
+    const tryConnect = () => {
+      const sock = createConnection(port, '127.0.0.1')
+      sock.on('connect', () => { sock.destroy(); resolve() })
+      sock.on('error', () => {
+        sock.destroy()
+        if (Date.now() >= deadline) reject(new Error(`Backend on port ${port} failed to start within ${timeoutMs}ms`))
+        else setTimeout(tryConnect, 200)
+      })
+    }
+    tryConnect()
+  })
+}
+
 async function startBackend(): Promise<void> {
   backendPort = await getFreePort()
 
@@ -27,8 +43,12 @@ async function startBackend(): Promise<void> {
 
   const cmd = isDev ? 'npx' : 'node'
   const args = isDev ? ['tsx', backendEntry] : [backendEntry]
+  const backendDir = isDev
+    ? join(__dirname, '../../../backend')
+    : join(process.resourcesPath, 'backend')
 
   backendProcess = spawn(cmd, args, {
+    cwd: backendDir,
     env: { ...process.env, PORT: String(backendPort) },
     stdio: 'pipe',
   })
@@ -45,6 +65,7 @@ function createWindow(port: number): void {
     minHeight: 700,
     show: false,
     titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -66,12 +87,9 @@ function createWindow(port: number): void {
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
-
-  // Pass backend port to renderer via query param
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.send('backend-port', port)
-  })
 }
+
+app.setName('OpenParsed')
 
 app.whenReady().then(async () => {
   // Load .env — search from app path upward
@@ -84,8 +102,9 @@ app.whenReady().then(async () => {
   }
 
   await startBackend()
-  // Small delay for backend to start listening
-  await new Promise(r => setTimeout(r, 1500))
+  await waitForBackend(backendPort)
+
+  ipcMain.handle('get-backend-port', () => backendPort)
   createWindow(backendPort)
 
   app.on('activate', () => {

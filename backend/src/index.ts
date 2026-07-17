@@ -11,12 +11,14 @@ const PORT = Number(process.env['PORT']) || 8000;
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (Electron, curl) or any localhost origin in dev
-    if (!origin || origin.startsWith('http://localhost') || origin === process.env.ALLOWED_ORIGIN) {
-      cb(null, true);
-    } else {
-      cb(new Error(`CORS blocked: ${origin}`));
-    }
+    if (!origin) { cb(null, true); return; }
+    try {
+      const { hostname } = new URL(origin);
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || origin === process.env.ALLOWED_ORIGIN) {
+        cb(null, true); return;
+      }
+    } catch {}
+    cb(new Error(`CORS blocked: ${origin}`));
   }
 }));
 app.use(express.json());

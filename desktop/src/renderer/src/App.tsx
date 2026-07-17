@@ -113,7 +113,7 @@ export default function App() {
 
   const handleFileDrop = useCallback(async (file: File) => {
     if (!apiBase) return
-    if (!file.name.endsWith('.pdf')) { setError('Only PDF files supported'); return }
+    if (!file.name.toLowerCase().endsWith('.pdf')) { setError('Only PDF files supported'); return }
     setFileName(file.name)
     setError('')
     setPages([])
@@ -172,7 +172,9 @@ export default function App() {
   const allTx = pages.flatMap(p => p.result.transactions)
   const isDirectMode = pages[0]?.result.isDirectMode ?? false
   const directColumns = pages[0]?.result.directColumns ?? []
-  const headers = isDirectMode ? directColumns : ['Date', 'Narration', 'Debit', 'Credit', 'Balance']
+  const headers = isDirectMode
+    ? (directColumns.length ? directColumns : allTx[0]?.rawValues?.map((_, i) => `Col ${i + 1}`) ?? [])
+    : ['Date', 'Narration', 'Debit', 'Credit', 'Balance']
   const filteredDocs = docs.filter(d => d.filename.toLowerCase().includes(search.toLowerCase()))
 
   return (

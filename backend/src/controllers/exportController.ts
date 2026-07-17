@@ -3,10 +3,12 @@ import { documentExists } from '../services/uploadService';
 import { getStoredTransactions } from '../services/transactionService';
 
 function escCsv(val: string): string {
-  if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-    return `"${val.replace(/"/g, '""')}"`;
+  // Prefix formula injection chars so spreadsheet apps don't execute them
+  const safe = /^[=+\-@\t\r]/.test(val) ? `'${val}` : val;
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return val;
+  return safe;
 }
 
 export function exportDocumentCsv(req: Request, res: Response): void {

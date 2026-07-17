@@ -10,7 +10,7 @@
 - [ ] Password-protected PDF support — add password input field in upload screen (web app has this, Electron doesn't)
 - [ ] userData storage — move `backend/storage/` to `app.getPath('userData')` so data survives app updates/reinstalls
 - [ ] Windows cross-platform fix — `env -u ELECTRON_RUN_AS_NODE` is Unix-only, need cross-platform equivalent before Windows build
-- [ ] `openExternal` URL validation — validate protocol before calling `shell.openExternal` to prevent protocol-handler abuse
+- [x] `openExternal` URL validation — validate protocol before calling `shell.openExternal` to prevent protocol-handler abuse
 - [ ] Race condition on rapid doc selection — use `AbortController` in `selectDoc` so a slow first request can't overwrite a newer selection
 - [ ] Retry failed extractions — documents with missing `transactions.json` silently show nothing; need retry action or error state in sidebar
 - [ ] Atomic JSON writes — write metadata/transactions to a temp file then rename to avoid truncation on crash

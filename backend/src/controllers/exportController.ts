@@ -36,7 +36,7 @@ export function exportDocumentCsv(req: Request, res: Response): void {
       rows = transactions.map((tx) => [tx.date, tx.narration, tx.debit, tx.credit, tx.balance].map(escCsv).join(','));
     }
 
-    const csv = [header.join(','), ...rows].join('\n');
+    const csv = [header.map(escCsv).join(','), ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="transactions-${id.slice(0, 8)}.csv"`);

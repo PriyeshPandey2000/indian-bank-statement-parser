@@ -77,7 +77,10 @@ function createWindow(port: number): void {
   win.on('ready-to-show', () => win.show())
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    try {
+      const { protocol } = new URL(url)
+      if (protocol === 'https:' || protocol === 'http:') shell.openExternal(url)
+    } catch {}
     return { action: 'deny' }
   })
 

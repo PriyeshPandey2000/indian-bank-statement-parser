@@ -3,10 +3,12 @@ import { documentExists } from '../services/uploadService';
 import { getStoredTransactions } from '../services/transactionService';
 
 function escCsv(val: string): string {
-  if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-    return `"${val.replace(/"/g, '""')}"`;
+  // Prefix formula injection chars so spreadsheet apps don't execute them
+  const safe = /^[=+\-@\t\r]/.test(val) ? `'${val}` : val;
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return val;
+  return safe;
 }
 
 export function exportDocumentCsv(req: Request, res: Response): void {
@@ -19,18 +21,22 @@ export function exportDocumentCsv(req: Request, res: Response): void {
 
   try {
     const pages = getStoredTransactions(id);
+    const isDirectMode = pages[0]?.result.isDirectMode ?? false;
     const transactions = pages.flatMap((p) => p.result.transactions);
 
-    const header = ['Date', 'Narration', 'Debit', 'Credit', 'Balance'];
-    const rows = transactions.map((tx) => [
-      tx.date,
-      tx.narration,
-      tx.debit,
-      tx.credit,
-      tx.balance,
-    ].map(escCsv).join(','));
+    let header: string[];
+    let rows: string[];
 
-    const csv = [header.join(','), ...rows].join('\n');
+    if (isDirectMode) {
+      const columns = (pages[0]?.result as any).directColumns as string[] ?? [];
+      header = columns.length ? columns : transactions[0]?.rawValues?.map((_, i) => `Col ${i + 1}`) ?? [];
+      rows = transactions.map((tx) => (tx.rawValues ?? []).map(escCsv).join(','));
+    } else {
+      header = ['Date', 'Narration', 'Debit', 'Credit', 'Balance'];
+      rows = transactions.map((tx) => [tx.date, tx.narration, tx.debit, tx.credit, tx.balance].map(escCsv).join(','));
+    }
+
+    const csv = [header.map(escCsv).join(','), ...rows].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="transactions-${id.slice(0, 8)}.csv"`);

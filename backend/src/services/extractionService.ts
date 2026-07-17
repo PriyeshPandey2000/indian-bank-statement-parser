@@ -235,7 +235,12 @@ function buildDocumentTransactions(
 async function runDirectExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {
   const chandraJson = await runChandraOcr(documentId, apiKey, pipelineId);
   const { columns, rows } = parseDirectJson(chandraJson);
-  return buildDirectDocumentTransactions(columns, rows);
+  const result = buildDirectDocumentTransactions(columns, rows);
+  fs.writeFileSync(
+    path.join(getDocumentDir(documentId), 'transactions.json'),
+    JSON.stringify(result, null, 2)
+  );
+  return result;
 }
 
 async function runChandraExtraction(documentId: string, apiKey: string, pipelineId: string): Promise<DocumentTransactions[]> {

@@ -58,6 +58,8 @@ export default function App() {
   const [licenseConfig, setLicenseConfig] = useState<{ url: string | null; token: string | null } | null>(null)
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
+  const [pagesUsed, setPagesUsed] = useState<number | null>(null)
+  const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
   const [docs, setDocs] = useState<DocMeta[]>([])
   const [search, setSearch] = useState('')
@@ -78,6 +80,12 @@ export default function App() {
     window.api?.getLicenseConfig().then(setLicenseConfig)
   }, [])
 
+  useEffect(() => {
+    if (licenseConfig?.url && licenseConfig?.token) {
+      checkLicense(0)
+    }
+  }, [licenseConfig, checkLicense])
+
   const apiBase = port !== null ? `http://localhost:${port}/api` : null
 
   const countPdfPages = useCallback(async (file: File): Promise<number> => {
@@ -88,17 +96,24 @@ export default function App() {
 
   const checkLicense = useCallback(async (pages: number): Promise<{ allowed: boolean; reason?: string }> => {
     if (!licenseConfig?.url || !licenseConfig?.token) return { allowed: true }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 5000)
     try {
       const res = await fetch(licenseConfig.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: licenseConfig.token, pages }),
+        signal: controller.signal,
       })
+      if (!res.ok) return { allowed: true }
       const data = await res.json() as { allowed: boolean; reason?: string; pagesUsed?: number; pagesLimit?: number }
+      if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed)
+      if (data.pagesLimit !== undefined) setPagesLimit(data.pagesLimit)
       return data
     } catch {
-      // Offline or server unreachable — fail open
       return { allowed: true }
+    } finally {
+      clearTimeout(timer)
     }
   }, [licenseConfig])
 
@@ -306,7 +321,21 @@ export default function App() {
             })}
           </div>
 
-          <div className="border-t border-neutral-800/60 px-3 py-2">
+          <div className="border-t border-neutral-800/60 px-3 py-2 flex flex-col gap-1.5">
+            {pagesUsed !== null && pagesLimit !== null && (
+              <div className="w-full">
+                <div className="flex justify-between text-[10px] text-neutral-600 mb-1">
+                  <span>{pagesUsed} / {pagesLimit} pages used</span>
+                  <span>{pagesLimit - pagesUsed} left</span>
+                </div>
+                <div className="h-1 w-full rounded-full bg-neutral-800">
+                  <div
+                    className={`h-1 rounded-full transition-all ${pagesUsed / pagesLimit > 0.8 ? 'bg-orange-500' : 'bg-blue-500'}`}
+                    style={{ width: `${Math.min((pagesUsed / pagesLimit) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
               <Settings size={11} />
               Settings

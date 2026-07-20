@@ -232,9 +232,9 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-neutral-950">
+        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#0d0d0d]">
           <div className="px-2 pt-2 pb-1.5 flex items-center gap-1.5">
-            <div className="flex flex-1 items-center gap-1.5 rounded border border-neutral-800 bg-neutral-900 px-2 py-1">
+            <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input
                 type="text"
@@ -266,15 +266,15 @@ export default function App() {
             )}
             {filteredDocs.map(doc => {
               const name = doc.filename.replace(/\.pdf$/i, '')
-              // Split on underscores/hyphens to show first meaningful segment as title
               const parts = name.split(/[_\-]/).filter(Boolean)
               const title = parts.length > 1 ? parts.slice(0, 2).join(' ') : name
               const sub   = parts.length > 2 ? parts.slice(2).join(' ') : ''
+              const isActive = selectedId === doc.documentId
               return (
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded px-2 py-2 transition-colors ${selectedId === doc.documentId ? 'bg-neutral-800' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
                 >
                   <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
                   {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}
@@ -441,17 +441,17 @@ export default function App() {
                       >
                         {isDirectMode && tx.rawValues ? (
                           tx.rawValues.map((val, i) => (
-                            <td key={i} className="px-3 py-1 text-neutral-300 whitespace-nowrap truncate max-w-xs" title={val}>
-                              {val || <span className="text-neutral-700">·</span>}
+                            <td key={i} className="px-3 py-2 text-neutral-300 whitespace-nowrap truncate max-w-xs" title={val}>
+                              {val || <span className="text-neutral-700">—</span>}
                             </td>
                           ))
                         ) : (
                           <>
-                            <td className="px-3 py-1 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
-                            <td className="px-3 py-1 text-neutral-200 max-w-xs truncate" title={tx.narration}>{tx.narration}</td>
-                            <td className="px-3 py-1 text-right text-red-400 font-mono whitespace-nowrap">{tx.debit || '·'}</td>
-                            <td className="px-3 py-1 text-right text-green-400 font-mono whitespace-nowrap">{tx.credit || '·'}</td>
-                            <td className="px-3 pr-6 py-1 text-right text-neutral-400 font-mono whitespace-nowrap">{tx.balance || '·'}</td>
+                            <td className="px-3 py-2 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
+                            <td className="px-3 py-2 text-neutral-200 max-w-xs truncate" title={tx.narration}>{tx.narration}</td>
+                            <td className="px-3 py-2 text-right text-red-400 font-mono whitespace-nowrap tabular-nums">{tx.debit || <span className="text-neutral-700">—</span>}</td>
+                            <td className="px-3 py-2 text-right text-green-400 font-mono whitespace-nowrap tabular-nums">{tx.credit || <span className="text-neutral-700">—</span>}</td>
+                            <td className="px-3 pr-6 py-2 text-right text-neutral-400 font-mono whitespace-nowrap tabular-nums">{tx.balance || <span className="text-neutral-700">—</span>}</td>
                           </>
                         )}
                       </tr>

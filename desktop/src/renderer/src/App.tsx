@@ -233,7 +233,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#0d0d0d]">
-          <div className="px-3 pt-3 pb-2 flex items-center gap-2">
+          <div className="px-3 pt-4 pb-3 flex items-center gap-2">
             <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input
@@ -260,7 +260,7 @@ export default function App() {
             </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 py-1.5 space-y-1">
+          <div className="flex-1 overflow-y-auto px-2 pt-0 pb-3 space-y-1">
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}
@@ -274,7 +274,7 @@ export default function App() {
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full text-left rounded-lg px-3 py-3 transition-colors ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
                 >
                   <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
                   {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}

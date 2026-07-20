@@ -260,7 +260,7 @@ export default function App() {
             </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-1" style={{ paddingTop: 8 }}>
+          <div className="flex-1 overflow-y-auto pb-3 space-y-1" style={{ paddingTop: 8, paddingLeft: 8, paddingRight: 8 }}>
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}
@@ -274,7 +274,7 @@ export default function App() {
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded-lg px-4 py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full text-left rounded-lg py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`} style={{ paddingLeft: 12, paddingRight: 12 }}
                 >
                   <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
                   {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}
@@ -429,7 +429,7 @@ export default function App() {
                   <thead className="sticky top-0 z-10">
                     <tr className="border-b border-neutral-700/60 bg-neutral-900/95 backdrop-blur-sm">
                       {headers.map((h, i) => (
-                        <th key={i} className={`px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400 whitespace-nowrap ${i === headers.length - 1 ? 'pr-6' : ''}`}>
+                        <th key={i} className={`py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400 whitespace-nowrap ${i === 0 ? 'pl-5 pr-3' : i === headers.length - 1 ? 'px-3 pr-6' : 'px-3'}`}>
                           {h || `Col ${i + 1}`}
                         </th>
                       ))}
@@ -443,13 +443,13 @@ export default function App() {
                       >
                         {isDirectMode && tx.rawValues ? (
                           tx.rawValues.map((val, i) => (
-                            <td key={i} className="px-3 py-2 text-neutral-300 whitespace-nowrap truncate max-w-xs" title={val}>
+                            <td key={i} className={`${i === 0 ? 'pl-5 pr-3' : 'px-3'} py-2 text-neutral-300 whitespace-nowrap truncate max-w-xs`} title={val}>
                               {val || <span className="text-neutral-700">—</span>}
                             </td>
                           ))
                         ) : (
                           <>
-                            <td className="px-3 py-2 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
+                            <td className="pl-5 pr-3 py-2 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
                             <td className="px-3 py-2 text-neutral-200 max-w-xs truncate" title={tx.narration}>{tx.narration}</td>
                             <td className="px-3 py-2 text-right text-red-400 font-mono whitespace-nowrap tabular-nums">{tx.debit || <span className="text-neutral-700">—</span>}</td>
                             <td className="px-3 py-2 text-right text-green-400 font-mono whitespace-nowrap tabular-nums">{tx.credit || <span className="text-neutral-700">—</span>}</td>

@@ -22,17 +22,9 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Build backend
-        working-directory: backend
-        run: npm run build
-
       - name: Install desktop deps
         working-directory: desktop
         run: npm ci
-
-      - name: Prune backend devDeps
-        working-directory: backend
-        run: npm prune --omit=dev
 
       - name: Write backend .env
         run: echo "${{ secrets.BACKEND_ENV }}" > backend/.env
@@ -62,17 +54,9 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Build backend
-        working-directory: backend
-        run: npm run build
-
       - name: Install desktop deps
         working-directory: desktop
         run: npm ci
-
-      - name: Prune backend devDeps
-        working-directory: backend
-        run: npm prune --omit=dev
 
       - name: Write backend .env
         run: echo "${{ secrets.BACKEND_ENV }}" > backend/.env

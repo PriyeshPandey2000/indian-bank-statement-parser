@@ -261,8 +261,7 @@ export default function App() {
             </label>
           </div>
 
-          <div className="mx-3 mb-0 h-px bg-neutral-800/60" />
-          <div className="flex-1 overflow-y-auto px-2 pt-3 pb-3 space-y-1">
+          <div className="flex-1 overflow-y-auto px-2 pt-5 pb-3 space-y-1">
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}

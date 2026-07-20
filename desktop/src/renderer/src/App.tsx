@@ -233,7 +233,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#0d0d0d]">
-          <div className="px-2 pt-2 pb-1.5 flex items-center gap-1.5">
+          <div className="px-3 pt-3 pb-2 flex items-center gap-2">
             <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input
@@ -260,7 +260,7 @@ export default function App() {
             </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
+          <div className="flex-1 overflow-y-auto px-2 py-1.5 space-y-1">
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}

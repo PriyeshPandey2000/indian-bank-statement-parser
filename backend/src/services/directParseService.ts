@@ -22,79 +22,6 @@ interface DirectRow {
 const DATE_RE   = /\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/;
 const AMOUNT_RE = /^[\d,]+(\.\d+)?$/;
 
-// Classify a column by its header name
-function colKind(h: string): 'date' | 'balance' | 'txnamount' | 'ref' | 'narration' | 'other' {
-  const l = h.toLowerCase();
-  if (/\b(date|dt)\b/.test(l)) return 'date';
-  if (/balance/.test(l)) return 'balance';
-  if (/withdrawal|deposit|\bdebit\b|\bcredit\b|\bdr\b|\bcr\b|\bamount\b/.test(l)) return 'txnamount';
-  if (/chq|cheque|check|ref(?:erence)?/.test(l)) return 'ref';
-  if (/particulars|description|narration|details|remarks/.test(l)) return 'narration';
-  return 'other';
-}
-
-// When a row has fewer cells than columns (empty <td>s omitted by the PDF parser),
-// use column-type semantics to insert the missing empty cells at the right positions.
-// Strategy:
-//   1. anchor date
-//   2. balance col  ← rightmost decimal amount in pool
-//   3. trailing 'other' cols (branch codes etc.) ← rightmost short integer codes
-//   4. txnamount cols ← remaining decimal amounts, left-to-right
-//   5. narration cols ← remaining text
-//   6. ref cols  ← always '' (Chq No etc. omitted because empty)
-function realignCells(cells: string[], columns: string[], dateCol: number): string[] {
-  const colCount = columns.length;
-  if (cells.length >= colCount) return cells.slice(0, colCount);
-
-  const result: string[] = new Array(colCount).fill('');
-  const kinds = columns.map(colKind);
-
-  const isDecimalAmt = (v: string) => v.includes('.') && AMOUNT_RE.test(v.replace(/,/g, '').trim());
-  const isShortCode  = (v: string) => /^\d{1,6}$/.test(v.trim()); // branch codes like 679, 006
-
-  // Anchor date
-  result[dateCol] = cells[dateCol] ?? '';
-  const pool = cells.filter((_, i) => i !== dateCol);
-
-  // Pass 1 — balance: rightmost decimal amount
-  const balanceCols = kinds.map((k, i) => k === 'balance' ? i : -1).filter(i => i >= 0).reverse();
-  for (const col of balanceCols) {
-    const ri = [...pool].map((v, i) => ({ v, i })).reverse().find(x => isDecimalAmt(x.v));
-    if (ri) { result[col] = ri.v; pool.splice(ri.i, 1); }
-  }
-
-  // Pass 2 — trailing 'other' cols: rightmost short integer code
-  const trailingOther: number[] = [];
-  for (let i = colCount - 1; i >= 0; i--) {
-    if (kinds[i] === 'other') trailingOther.unshift(i);
-    else break;
-  }
-  for (const col of [...trailingOther].reverse()) {
-    const ri = [...pool].map((v, i) => ({ v, i })).reverse().find(x => isShortCode(x.v));
-    if (ri) { result[col] = ri.v; pool.splice(ri.i, 1); }
-  }
-
-  // Pass 3 — txnamount cols: remaining decimal amounts, left-to-right
-  const txnCols = kinds.map((k, i) => k === 'txnamount' ? i : -1).filter(i => i >= 0);
-  for (const col of txnCols) {
-    const li = pool.findIndex(v => isDecimalAmt(v));
-    if (li >= 0) { result[col] = pool.splice(li, 1)[0]!; }
-  }
-
-  // Pass 4 — narration cols: remaining text
-  const narrationCols = kinds.map((k, i) => k === 'narration' ? i : -1).filter(i => i >= 0);
-  for (const col of narrationCols) {
-    if (result[col] === '' && pool.length > 0) result[col] = pool.shift()!;
-  }
-
-  // Pass 5 — spill: any leftover pool values into first empty non-ref slot
-  for (let col = 0; col < colCount && pool.length > 0; col++) {
-    if (result[col] === '' && kinds[col] !== 'ref') result[col] = pool.shift()!;
-  }
-
-  return result;
-}
-
 function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, ' ')
@@ -175,8 +102,6 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
       const { headers, dataRows } = parseTable(block.html);
 
       if (columns.length === 0 && headers.length > 0) {
-        // Skip tables that aren't transaction tables — must have a date header AND an amount header.
-        // Prevents locking onto account-info or legend tables that appear before the transaction table.
         const hasDateHeader   = headers.some(h => /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h));
         const hasAmountHeader = headers.some(h => /withdrawal|deposit|debit|credit|\bdr\b|\bcr\b|amount|balance/i.test(h));
         if (!hasDateHeader || !hasAmountHeader) {
@@ -189,14 +114,16 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
           /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h)
         );
         if (dateCol < 0) dateCol = inferDateCol(dataRows);
+
         console.log(`[DirectParser] columns=${JSON.stringify(columns)} dateCol=${dateCol}`);
       }
 
+      const colCount = columns.length;
       for (const cells of dataRows) {
         if (!isTransactionRow(cells, dateCol)) continue;
-        const colCount = columns.length;
-        const aligned = realignCells(cells, columns, dateCol);
-        rows.push({ values: Array.from({ length: colCount }, (_, i) => aligned[i] ?? ''), page: pageNum });
+        // Datalab HTML includes <td></td> for every column including empty ones.
+        // Use cells directly by position; pad with '' if a row is unexpectedly short.
+        rows.push({ values: Array.from({ length: colCount }, (_, i) => cells[i] ?? ''), page: pageNum });
       }
     }
   }

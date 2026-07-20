@@ -408,14 +408,14 @@ export default function App() {
                 <div className="flex items-center gap-2" style={{ marginRight: 20 }}>
                   <button
                     onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
-                    className="text-xs font-medium px-4 py-1.5 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
+                    className="text-xs font-medium px-5 py-2 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
                   >
                     New file
                   </button>
                   <a
                     href={`${apiBase}/document/${selectedId}/export/csv`}
                     download
-                    className="flex items-center gap-2 text-xs font-medium px-4 py-1.5 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
+                    className="flex items-center gap-2 text-xs font-medium px-5 py-2 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
                   >
                     <Download size={12} />
                     Export CSV

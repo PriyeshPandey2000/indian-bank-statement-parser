@@ -261,8 +261,8 @@ export default function App() {
             </label>
           </div>
 
-          <div className="mx-3 mb-1 h-px bg-neutral-800/60" />
-          <div className="flex-1 overflow-y-auto px-2 pt-2 pb-3 space-y-1">
+          <div className="mx-3 mb-0 h-px bg-neutral-800/60" />
+          <div className="flex-1 overflow-y-auto px-2 pt-3 pb-3 space-y-1">
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}
@@ -276,7 +276,7 @@ export default function App() {
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded-lg px-3 py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full text-left rounded-lg px-4 py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
                 >
                   <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
                   {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}

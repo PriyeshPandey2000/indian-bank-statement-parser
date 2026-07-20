@@ -231,9 +231,9 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#0d0d0d]">
+        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#161616]">
           <div className="h-4 shrink-0" />
-          <div className="px-3 flex items-center gap-2" style={{ paddingTop: 2, paddingBottom: 8 }}>
+          <div className="px-4 flex items-center gap-1.5" style={{ paddingTop: 2, paddingBottom: 8 }}>
             <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input
@@ -249,36 +249,38 @@ export default function App() {
                 </button>
               )}
             </div>
-            <label
-              title="Upload new PDF"
-              className="shrink-0 rounded-md border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-all cursor-pointer"
-              onDrop={handleDrop}
-              onDragOver={e => e.preventDefault()}
-            >
-              <Plus size={12} />
-              <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
-            </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto pb-3 space-y-1" style={{ paddingTop: 8, paddingLeft: 8, paddingRight: 8 }}>
+          <div className="flex-1 overflow-y-auto pb-3" style={{ paddingTop: 0, paddingLeft: 4, paddingRight: 4 }}>
+            <div className="flex items-center justify-between" style={{ paddingLeft: 8, paddingRight: 6, paddingTop: 6, paddingBottom: 6 }}>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Statements</span>
+              <label
+                title="Upload new PDF"
+                className="rounded p-1 text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 transition-all cursor-pointer"
+                onDrop={handleDrop}
+                onDragOver={e => e.preventDefault()}
+              >
+                <Plus size={11} />
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
+              </label>
+            </div>
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}
             {filteredDocs.map(doc => {
               const name = doc.filename.replace(/\.pdf$/i, '')
-              const parts = name.split(/[_\-]/).filter(Boolean)
+              const parts = name.split(/[_\-\s]/).filter(Boolean)
               const title = parts.length > 1 ? parts.slice(0, 2).join(' ') : name
-              const sub   = parts.length > 2 ? parts.slice(2).join(' ') : ''
               const isActive = selectedId === doc.documentId
               return (
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded-lg py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`} style={{ paddingLeft: 12, paddingRight: 12 }}
+                  className={`w-full flex items-center justify-between rounded-md py-2 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-300'}`}
+                  style={{ paddingLeft: 10, paddingRight: 10 }}
                 >
-                  <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
-                  {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}
-                  <div className="text-[10px] text-neutral-600 mt-0.5">{timeAgo(doc.createdAt)}</div>
+                  <span className="text-[13px] truncate flex-1 text-left leading-snug">{title}</span>
+                  <span className="text-[11px] text-neutral-600 shrink-0 ml-3 leading-snug">{timeAgo(doc.createdAt)}</span>
                 </button>
               )
             })}
@@ -403,19 +405,21 @@ export default function App() {
           ) : (
             <>
               {/* Toolbar */}
-              <div className="shrink-0 flex items-center justify-between py-2.5 border-b border-neutral-800/60 bg-neutral-900/60" style={{ paddingLeft: 16, paddingRight: 24 }}>
-                <span className="text-xs text-neutral-500">{allTx.length} transactions · {pages.length} page{pages.length !== 1 ? 's' : ''}</span>
+              <div className="shrink-0 flex items-center justify-between py-3 border-b border-neutral-800/60 bg-neutral-900/80" style={{ paddingLeft: 20, paddingRight: 24 }}>
+                <span className="text-xs font-medium text-neutral-400">{allTx.length} transactions · {pages.length} page{pages.length !== 1 ? 's' : ''}</span>
                 <div className="flex items-center gap-2" style={{ marginRight: 20 }}>
                   <button
                     onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
-                    className="text-xs font-medium px-5 py-2 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
+                    className="text-xs font-medium py-2 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
+                    style={{ paddingLeft: 16, paddingRight: 16 }}
                   >
                     New file
                   </button>
                   <a
                     href={`${apiBase}/document/${selectedId}/export/csv`}
                     download
-                    className="flex items-center gap-2 text-xs font-medium px-5 py-2 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
+                    className="flex items-center gap-2 text-xs font-medium py-2 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
+                    style={{ paddingLeft: 16, paddingRight: 16 }}
                   >
                     <Download size={12} />
                     Export CSV
@@ -439,7 +443,7 @@ export default function App() {
                     {allTx.map((tx, idx) => (
                       <tr
                         key={tx.id}
-                        className={`border-b border-neutral-800/40 hover:bg-neutral-800/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-neutral-900/20'} ${tx.isSuspicious ? 'border-l-2 border-l-orange-500' : ''}`}
+                        className={`border-b border-neutral-700/50 hover:bg-neutral-800/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-neutral-900/20'} ${tx.isSuspicious ? 'border-l-2 border-l-orange-500' : ''}`}
                       >
                         {isDirectMode && tx.rawValues ? (
                           tx.rawValues.map((val, i) => (

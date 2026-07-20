@@ -4,7 +4,7 @@ import { getStoredTransactions } from '../services/transactionService';
 
 function escCsv(val: string): string {
   // Prefix formula injection chars — but not negative numbers like -5000.00
-  const isNegativeNum = /^-[\d,.]/.test(val);
+  const isNegativeNum = /^-[\d,]+(\.\d+)?$/.test(val);
   const safe = (!isNegativeNum && /^[=+\-@\t\r]/.test(val)) ? `'${val}` : val;
   if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
     return `"${safe.replace(/"/g, '""')}"`;

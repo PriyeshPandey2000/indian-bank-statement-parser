@@ -216,7 +216,11 @@ export default function App() {
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}
         <div className="w-56 shrink-0 flex items-center gap-2" style={{ paddingLeft: 80 }}>
-          <span className="text-xs font-semibold text-neutral-200 tracking-wide">OpenParsed</span>
+          <span
+            className="text-xs font-semibold text-neutral-200 tracking-wide cursor-pointer hover:text-white transition-colors"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
+          >OpenParsed</span>
         </div>
         {fileName && (
           <span className="text-xs text-neutral-500 truncate">

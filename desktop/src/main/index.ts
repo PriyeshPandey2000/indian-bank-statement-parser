@@ -1,9 +1,14 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import log from 'electron-log/main'
 import { join } from 'path'
 import { spawn, ChildProcess } from 'child_process'
 import { createServer, createConnection } from 'net'
 import * as dotenv from 'dotenv'
+
+log.transports.file.level = 'info'
+log.transports.file.maxSize = 5 * 1024 * 1024
+autoUpdater.logger = log
 
 let backendProcess: ChildProcess | null = null
 let backendPort = 3001
@@ -36,6 +41,7 @@ function waitForBackend(port: number, timeoutMs = 15000): Promise<void> {
 
 async function startBackend(): Promise<void> {
   backendPort = await getFreePort()
+  log.info('[backend] assigned port', backendPort)
 
   const isDev = !app.isPackaged
   const backendEntry = isDev
@@ -47,6 +53,8 @@ async function startBackend(): Promise<void> {
   const backendDir = isDev
     ? join(__dirname, '../../../backend')
     : join(process.resourcesPath, 'backend')
+
+  log.info('[backend] spawning', cmd, args.join(' '), 'in', backendDir)
 
   backendProcess = spawn(cmd, args, {
     cwd: backendDir,
@@ -61,8 +69,11 @@ async function startBackend(): Promise<void> {
     ...(isDev && process.platform === 'win32' && { shell: true }),
   })
 
-  backendProcess.stdout?.on('data', (d) => console.log('[backend]', d.toString().trim()))
-  backendProcess.stderr?.on('data', (d) => console.error('[backend]', d.toString().trim()))
+  backendProcess.on('error', (err) => log.error('[backend] spawn failed', err))
+  backendProcess.on('exit', (code, signal) => log.warn('[backend] exited code=%s signal=%s', code, signal))
+
+  backendProcess.stdout?.on('data', (d) => log.info('[backend]', d.toString().trim()))
+  backendProcess.stderr?.on('data', (d) => log.error('[backend]', d.toString().trim()))
 }
 
 function createWindow(port: number): void {
@@ -103,27 +114,38 @@ function createWindow(port: number): void {
 app.setName('OpenParsed')
 
 app.whenReady().then(async () => {
-  for (const p of [
+  log.info('[app] ready — platform=%s arch=%s version=%s packaged=%s', process.platform, process.arch, app.getVersion(), app.isPackaged)
+  log.info('[app] userData=%s', app.getPath('userData'))
+
+  const envPaths = [
     join(process.resourcesPath, 'backend/.env'),
     join(app.getAppPath(), '../../.env'),
     join(app.getAppPath(), '../.env'),
     join(__dirname, '../../../../.env'),
-  ]) {
-    dotenv.config({ path: p })
+  ]
+  for (const p of envPaths) {
+    const result = dotenv.config({ path: p })
+    if (!result.error) log.info('[env] loaded %s', p)
   }
 
   await startBackend()
+  log.info('[backend] spawned, waiting for port %d...', backendPort)
   await waitForBackend(backendPort)
+  log.info('[backend] ready on port %d', backendPort)
 
   ipcMain.handle('get-backend-port', () => backendPort)
   createWindow(backendPort)
+  log.info('[window] created')
 
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify().catch((e) => console.error('[auto-update]', e))
+    autoUpdater.checkForUpdatesAndNotify().catch((e) => log.error('[auto-update]', e))
   }
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow(backendPort)
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow(backendPort)
+      log.info('[window] re-created on activate')
+    }
   })
 })
 
@@ -132,5 +154,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('will-quit', () => {
+  log.info('[app] quitting')
   backendProcess?.kill()
 })

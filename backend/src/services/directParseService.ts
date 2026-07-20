@@ -19,7 +19,7 @@ interface DirectRow {
   page: number;
 }
 
-const DATE_RE   = /\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/;
+const DATE_RE   = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}[\s\-]+[A-Za-z]{3}[\s\-]+\d{4})/;
 const AMOUNT_RE = /^[\d,]+(\.\d+)?$/;
 
 function stripHtml(html: string): string {
@@ -102,8 +102,6 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
       const { headers, dataRows } = parseTable(block.html);
 
       if (columns.length === 0 && headers.length > 0) {
-        // Skip tables that aren't transaction tables — must have a date header AND an amount header.
-        // Prevents locking onto account-info or legend tables that appear before the transaction table.
         const hasDateHeader   = headers.some(h => /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h));
         const hasAmountHeader = headers.some(h => /withdrawal|deposit|debit|credit|\bdr\b|\bcr\b|amount|balance/i.test(h));
         if (!hasDateHeader || !hasAmountHeader) {
@@ -116,12 +114,15 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
           /\b(txn\s*date|trans\s*date|value\s*date|posting\s*date|\bdate\b|dt)\b/i.test(h)
         );
         if (dateCol < 0) dateCol = inferDateCol(dataRows);
+
         console.log(`[DirectParser] columns=${JSON.stringify(columns)} dateCol=${dateCol}`);
       }
 
+      const colCount = columns.length;
       for (const cells of dataRows) {
         if (!isTransactionRow(cells, dateCol)) continue;
-        const colCount = columns.length;
+        // Datalab HTML includes <td></td> for every column including empty ones.
+        // Use cells directly by position; pad with '' if a row is unexpectedly short.
         rows.push({ values: Array.from({ length: colCount }, (_, i) => cells[i] ?? ''), page: pageNum });
       }
     }
@@ -141,16 +142,16 @@ export function buildDirectDocumentTransactions(
   for (const row of rows) {
     if (!pageMap.has(row.page)) pageMap.set(row.page, []);
     pageMap.get(row.page)!.push({
-      id:            id++,
-      date:          '',
-      narration:     '',
-      rawText:       row.values.join(' | '),
-      sourceRows:    [],
-      debit:         '',
-      credit:        '',
-      balance:       '',
-      isSuspicious:  false,
-      rawValues:     row.values,
+      id:           id++,
+      date:         '',
+      narration:    '',
+      rawText:      row.values.join(' | '),
+      sourceRows:   [],
+      debit:        '',
+      credit:       '',
+      balance:      '',
+      isSuspicious: false,
+      rawValues:    row.values,
     });
   }
 
@@ -159,13 +160,13 @@ export function buildDirectDocumentTransactions(
     .map(([page, transactions]) => ({
       page,
       result: {
-        classifiedRows:       [],
+        classifiedRows:      [],
         transactions,
-        headerRowId:          null,
-        bankProfileId:        'direct',
-        unconsumedPreBuffer:  [],
-        directColumns:        columns,
-        isDirectMode:         true,
+        headerRowId:         null,
+        bankProfileId:       'direct',
+        unconsumedPreBuffer: [],
+        directColumns:       columns,
+        isDirectMode:        true,
       },
     }));
 }

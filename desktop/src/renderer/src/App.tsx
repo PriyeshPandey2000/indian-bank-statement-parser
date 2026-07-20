@@ -312,7 +312,7 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
-                className="flex flex-col items-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl px-24 py-20 cursor-pointer transition-all group hover:bg-neutral-900/30"
+                className="flex flex-col items-center justify-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl cursor-pointer transition-all group hover:bg-neutral-900/30 w-full max-w-lg" style={{ minHeight: 320, padding: '60px 80px' }}
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
               >

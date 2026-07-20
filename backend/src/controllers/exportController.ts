@@ -3,8 +3,9 @@ import { documentExists } from '../services/uploadService';
 import { getStoredTransactions } from '../services/transactionService';
 
 function escCsv(val: string): string {
-  // Prefix formula injection chars so spreadsheet apps don't execute them
-  const safe = /^[=+\-@\t\r]/.test(val) ? `'${val}` : val;
+  // Prefix formula injection chars — but not negative numbers like -5000.00
+  const isNegativeNum = /^-[\d,.]/.test(val);
+  const safe = (!isNegativeNum && /^[=+\-@\t\r]/.test(val)) ? `'${val}` : val;
   if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
     return `"${safe.replace(/"/g, '""')}"`;
   }

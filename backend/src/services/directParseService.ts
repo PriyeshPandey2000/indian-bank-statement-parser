@@ -19,7 +19,7 @@ interface DirectRow {
   page: number;
 }
 
-const DATE_RE   = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})/;
+const DATE_RE   = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}[\s\-]+[A-Za-z]{3}[\s\-]+\d{4})/;
 const AMOUNT_RE = /^[\d,]+(\.\d+)?$/;
 
 function stripHtml(html: string): string {

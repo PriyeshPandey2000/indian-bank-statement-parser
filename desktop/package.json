@@ -2,6 +2,8 @@
   "name": "open-parsed-desktop",
   "version": "0.1.0",
   "private": true,
+  "description": "Bank statement parser for accountants and CAs",
+  "author": "Priyesh Pandey <priyeshpandey2000@gmail.com>",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "env -u ELECTRON_RUN_AS_NODE electron-vite dev",

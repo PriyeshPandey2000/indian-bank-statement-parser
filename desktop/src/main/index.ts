@@ -56,8 +56,8 @@ async function startBackend(): Promise<void> {
       ...(!isDev && { ELECTRON_RUN_AS_NODE: '1' }),
     },
     stdio: 'pipe',
-    // shell:true lets Windows find npx.cmd via cmd.exe; harmless on mac/linux
-    ...(isDev && { shell: true }),
+    // shell:true lets Windows find npx.cmd via cmd.exe; not needed on mac/linux
+    ...(isDev && process.platform === 'win32' && { shell: true }),
   })
 
   backendProcess.stdout?.on('data', (d) => console.log('[backend]', d.toString().trim()))

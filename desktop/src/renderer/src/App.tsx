@@ -223,8 +223,8 @@ export default function App() {
           >OpenParsed</span>
         </div>
         {fileName && (
-          <span className="text-xs text-neutral-500 truncate">
-            {fileName}{allTx.length > 0 && <span className="text-neutral-600"> · {allTx.length} transactions</span>}
+          <span className="text-xs text-neutral-300 truncate">
+            {fileName}{allTx.length > 0 && <span className="text-neutral-500"> · {allTx.length} transactions</span>}
           </span>
         )}
       </div>

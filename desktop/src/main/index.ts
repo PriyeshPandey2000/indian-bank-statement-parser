@@ -1,4 +1,5 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import { spawn, ChildProcess } from 'child_process'
 import { createServer, createConnection } from 'net'
@@ -116,6 +117,10 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('get-backend-port', () => backendPort)
   createWindow(backendPort)
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(backendPort)

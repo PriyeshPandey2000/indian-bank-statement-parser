@@ -77,6 +77,11 @@
       "target": [
         "nsis"
       ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "PriyeshPandey2000",
+      "repo": "indian-bank-statement-parser"
     }
   },
   "allowScripts": {

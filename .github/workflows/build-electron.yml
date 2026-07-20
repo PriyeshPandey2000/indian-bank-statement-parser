@@ -2,10 +2,7 @@ name: Build Electron App
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'desktop/**'
-      - 'backend/**'
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
@@ -29,10 +26,23 @@ jobs:
       - name: Write backend .env
         run: echo "${{ secrets.BACKEND_ENV }}" > backend/.env
 
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Prune backend dev deps
+        working-directory: backend
+        run: npm prune --omit=dev
+
+      - name: Build desktop
+        working-directory: desktop
+        run: npx electron-vite build
+
       - name: Package Mac
         working-directory: desktop
-        run: npm run package
+        run: npx electron-builder --publish always
         env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Mac artifact
@@ -61,9 +71,23 @@ jobs:
       - name: Write backend .env
         run: echo "${{ secrets.BACKEND_ENV }}" > backend/.env
 
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Prune backend dev deps
+        working-directory: backend
+        run: npm prune --omit=dev
+
+      - name: Build desktop
+        working-directory: desktop
+        run: npx electron-vite build
+
       - name: Package Windows
         working-directory: desktop
-        run: npm run package
+        run: npx electron-builder --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

@@ -216,11 +216,12 @@ export default function App() {
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}
         <div className="w-56 shrink-0 flex items-center gap-2" style={{ paddingLeft: 80 }}>
-          <span
-            className="text-xs font-semibold text-neutral-200 tracking-wide cursor-pointer hover:text-white transition-colors"
+          <button
+            type="button"
+            className="text-xs font-semibold text-neutral-200 tracking-wide cursor-pointer hover:text-white transition-colors bg-transparent border-0 p-0"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
-          >OpenParsed</span>
+          >OpenParsed</button>
         </div>
         {fileName && (
           <span className="text-xs text-neutral-300 truncate">
@@ -256,12 +257,13 @@ export default function App() {
               <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Statements</span>
               <label
                 title="Upload new PDF"
+                tabIndex={0}
                 className="rounded p-1 text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 transition-all cursor-pointer"
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
               >
                 <Plus size={11} />
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
               </label>
             </div>
             {filteredDocs.length === 0 && (
@@ -313,6 +315,7 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
+                tabIndex={0}
                 className="flex flex-col items-center justify-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl cursor-pointer transition-all group hover:bg-neutral-900/30 w-full max-w-lg" style={{ minHeight: 320, padding: '60px 80px' }}
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
@@ -324,7 +327,7 @@ export default function App() {
                   <div className="text-sm font-semibold text-neutral-200 tracking-tight">Drop a bank statement PDF</div>
                   <div className="text-xs text-neutral-600 mt-1.5">or click to browse</div>
                 </div>
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
                 {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
               </label>
             </div>

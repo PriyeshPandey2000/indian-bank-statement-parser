@@ -216,25 +216,26 @@ export default function App() {
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}
         <div className="w-56 shrink-0 flex items-center gap-2" style={{ paddingLeft: 80 }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <rect width="16" height="16" rx="4" fill="#3b82f6"/>
-            <path d="M4 5h5.5a2.5 2.5 0 010 5H4V5z" fill="white" opacity=".9"/>
-            <rect x="4" y="11" width="8" height="1.5" rx=".75" fill="white" opacity=".5"/>
-          </svg>
-          <span className="text-xs font-semibold text-neutral-200 tracking-wide">OpenParsed</span>
+          <button
+            type="button"
+            className="text-xs font-semibold text-neutral-200 tracking-wide cursor-pointer hover:text-white transition-colors bg-transparent border-0 p-0"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false); setError('') }}
+          >OpenParsed</button>
         </div>
         {fileName && (
-          <span className="text-xs text-neutral-500 truncate">
-            {fileName}{allTx.length > 0 && <span className="text-neutral-600"> · {allTx.length} transactions</span>}
+          <span className="text-xs text-neutral-300 truncate">
+            {fileName}{allTx.length > 0 && <span className="text-neutral-500"> · {allTx.length} transactions</span>}
           </span>
         )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-neutral-950">
-          <div className="px-2 pt-2 pb-1.5 flex items-center gap-1.5">
-            <div className="flex flex-1 items-center gap-1.5 rounded border border-neutral-800 bg-neutral-900 px-2 py-1">
+        <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#161616]">
+          <div className="h-4 shrink-0" />
+          <div className="px-4 flex items-center gap-1.5" style={{ paddingTop: 2, paddingBottom: 8 }}>
+            <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input
                 type="text"
@@ -249,36 +250,39 @@ export default function App() {
                 </button>
               )}
             </div>
-            <label
-              title="Upload new PDF"
-              className="shrink-0 rounded-md border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-all cursor-pointer"
-              onDrop={handleDrop}
-              onDragOver={e => e.preventDefault()}
-            >
-              <Plus size={12} />
-              <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
-            </label>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
+          <div className="flex-1 overflow-y-auto pb-3" style={{ paddingTop: 0, paddingLeft: 4, paddingRight: 4 }}>
+            <div className="flex items-center justify-between" style={{ paddingLeft: 8, paddingRight: 6, paddingTop: 6, paddingBottom: 6 }}>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Statements</span>
+              <label
+                title="Upload new PDF"
+                tabIndex={0}
+                className="rounded p-1 text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 transition-all cursor-pointer"
+                onDrop={handleDrop}
+                onDragOver={e => e.preventDefault()}
+              >
+                <Plus size={11} />
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
+              </label>
+            </div>
             {filteredDocs.length === 0 && (
               <p className="text-[11px] text-neutral-600 text-center py-6">No statements yet</p>
             )}
             {filteredDocs.map(doc => {
               const name = doc.filename.replace(/\.pdf$/i, '')
-              // Split on underscores/hyphens to show first meaningful segment as title
-              const parts = name.split(/[_\-]/).filter(Boolean)
+              const parts = name.split(/[_\-\s]/).filter(Boolean)
               const title = parts.length > 1 ? parts.slice(0, 2).join(' ') : name
-              const sub   = parts.length > 2 ? parts.slice(2).join(' ') : ''
+              const isActive = selectedId === doc.documentId
               return (
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded px-2 py-2 transition-colors ${selectedId === doc.documentId ? 'bg-neutral-800' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full flex items-center justify-between rounded-md py-2 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-300'}`}
+                  style={{ paddingLeft: 10, paddingRight: 10 }}
                 >
-                  <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
-                  {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}
-                  <div className="text-[10px] text-neutral-600 mt-0.5">{timeAgo(doc.createdAt)}</div>
+                  <span className="text-[13px] truncate flex-1 text-left leading-snug">{title}</span>
+                  <span className="text-[11px] text-neutral-600 shrink-0 ml-3 leading-snug">{timeAgo(doc.createdAt)}</span>
                 </button>
               )
             })}
@@ -299,7 +303,7 @@ export default function App() {
                 </div>
               </div>
             )}
-            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
+            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
               <Settings size={11} />
               Settings
             </button>
@@ -311,16 +315,19 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
-                className="flex flex-col items-center gap-3 border border-dashed border-neutral-700 hover:border-blue-500 rounded-xl p-14 cursor-pointer transition-colors group"
+                tabIndex={0}
+                className="flex flex-col items-center justify-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl cursor-pointer transition-all group hover:bg-neutral-900/30 w-full max-w-lg" style={{ minHeight: 320, padding: '60px 80px' }}
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
               >
-                <Upload size={32} className="text-neutral-600 group-hover:text-blue-400 transition-colors" />
-                <div className="text-center">
-                  <div className="text-sm text-neutral-300 font-medium">Drop a bank statement PDF</div>
-                  <div className="text-xs text-neutral-600 mt-1">or click to browse</div>
+                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 group-hover:border-blue-500/30 transition-all">
+                  <Upload size={28} className="text-neutral-500 group-hover:text-blue-400 transition-colors" />
                 </div>
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-neutral-200 tracking-tight">Drop a bank statement PDF</div>
+                  <div className="text-xs text-neutral-600 mt-1.5">or click to browse</div>
+                </div>
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
                 {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
               </label>
             </div>
@@ -376,13 +383,13 @@ export default function App() {
                 <div className="flex items-center gap-3 w-full">
                   <button
                     onClick={handleCancelStaged}
-                    className="flex-1 text-xs font-medium px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-all"
+                    className="flex-1 text-xs font-medium px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpload}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer"
                   >
                     <Upload size={13} />
                     Upload
@@ -401,19 +408,21 @@ export default function App() {
           ) : (
             <>
               {/* Toolbar */}
-              <div className="shrink-0 flex items-center justify-between py-1.5 border-b border-neutral-800/60 bg-neutral-900/40" style={{ paddingLeft: 16, paddingRight: 24 }}>
-                <span className="text-xs text-neutral-500">{allTx.length} transactions · {pages.length} page{pages.length !== 1 ? 's' : ''}</span>
+              <div className="shrink-0 flex items-center justify-between py-3 border-b border-neutral-800/60 bg-neutral-900/80" style={{ paddingLeft: 20, paddingRight: 24 }}>
+                <span className="text-xs font-medium text-neutral-400">{allTx.length} transactions · {pages.length} page{pages.length !== 1 ? 's' : ''}</span>
                 <div className="flex items-center gap-2" style={{ marginRight: 20 }}>
                   <button
-                    onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
-                    className="text-xs font-medium px-4 py-1.5 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all"
+                    onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false); setError('') }}
+                    className="text-xs font-medium py-2 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
+                    style={{ paddingLeft: 16, paddingRight: 16 }}
                   >
                     New file
                   </button>
                   <a
                     href={`${apiBase}/document/${selectedId}/export/csv`}
                     download
-                    className="flex items-center gap-2 text-xs font-medium px-4 py-1.5 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all"
+                    className="flex items-center gap-2 text-xs font-medium py-2 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
+                    style={{ paddingLeft: 16, paddingRight: 16 }}
                   >
                     <Download size={12} />
                     Export CSV
@@ -424,10 +433,10 @@ export default function App() {
               {/* Table */}
               <div className="flex-1 overflow-auto" style={{ overflowX: 'auto' }}>
                 <table className="text-xs border-collapse" style={{ minWidth: '100%' }}>
-                  <thead className="sticky top-0 bg-neutral-900 z-10">
-                    <tr className="border-b border-neutral-800">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="border-b border-neutral-700/60 bg-neutral-900/95 backdrop-blur-sm">
                       {headers.map((h, i) => (
-                        <th key={i} className={`px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap ${i === headers.length - 1 ? 'pr-6' : ''}`}>
+                        <th key={i} className={`py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400 whitespace-nowrap ${i === 0 ? 'pl-5 pr-3' : i === headers.length - 1 ? 'px-3 pr-6' : 'px-3'}`}>
                           {h || `Col ${i + 1}`}
                         </th>
                       ))}
@@ -437,21 +446,21 @@ export default function App() {
                     {allTx.map((tx, idx) => (
                       <tr
                         key={tx.id}
-                        className={`border-b border-neutral-800/40 hover:bg-neutral-800/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-neutral-900/20'} ${tx.isSuspicious ? 'border-l-2 border-l-orange-500' : ''}`}
+                        className={`border-b border-neutral-700/50 hover:bg-neutral-800/30 transition-colors ${idx % 2 === 0 ? '' : 'bg-neutral-900/20'} ${tx.isSuspicious ? 'border-l-2 border-l-orange-500' : ''}`}
                       >
                         {isDirectMode && tx.rawValues ? (
                           tx.rawValues.map((val, i) => (
-                            <td key={i} className="px-3 py-1 text-neutral-300 whitespace-nowrap truncate max-w-xs" title={val}>
-                              {val || <span className="text-neutral-700">·</span>}
+                            <td key={i} className={`${i === 0 ? 'pl-5 pr-3' : 'px-3'} py-2 text-neutral-300 whitespace-nowrap truncate max-w-xs`} title={val}>
+                              {val || <span className="text-neutral-700">—</span>}
                             </td>
                           ))
                         ) : (
                           <>
-                            <td className="px-3 py-1 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
-                            <td className="px-3 py-1 text-neutral-200 max-w-xs truncate" title={tx.narration}>{tx.narration}</td>
-                            <td className="px-3 py-1 text-right text-red-400 font-mono whitespace-nowrap">{tx.debit || '·'}</td>
-                            <td className="px-3 py-1 text-right text-green-400 font-mono whitespace-nowrap">{tx.credit || '·'}</td>
-                            <td className="px-3 pr-6 py-1 text-right text-neutral-400 font-mono whitespace-nowrap">{tx.balance || '·'}</td>
+                            <td className="pl-5 pr-3 py-2 font-mono text-neutral-400 whitespace-nowrap">{tx.date}</td>
+                            <td className="px-3 py-2 text-neutral-200 max-w-xs truncate" title={tx.narration}>{tx.narration}</td>
+                            <td className="px-3 py-2 text-right text-red-400 font-mono whitespace-nowrap tabular-nums">{tx.debit || <span className="text-neutral-700">—</span>}</td>
+                            <td className="px-3 py-2 text-right text-green-400 font-mono whitespace-nowrap tabular-nums">{tx.credit || <span className="text-neutral-700">—</span>}</td>
+                            <td className="px-3 pr-6 py-2 text-right text-neutral-400 font-mono whitespace-nowrap tabular-nums">{tx.balance || <span className="text-neutral-700">—</span>}</td>
                           </>
                         )}
                       </tr>

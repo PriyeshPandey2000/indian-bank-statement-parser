@@ -216,11 +216,6 @@ export default function App() {
       <div className="h-9 flex items-center drag-region border-b border-neutral-800/60 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {/* 80px left padding reserves space for macOS traffic lights */}
         <div className="w-56 shrink-0 flex items-center gap-2" style={{ paddingLeft: 80 }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <rect width="16" height="16" rx="4" fill="#3b82f6"/>
-            <path d="M4 5h5.5a2.5 2.5 0 010 5H4V5z" fill="white" opacity=".9"/>
-            <rect x="4" y="11" width="8" height="1.5" rx=".75" fill="white" opacity=".5"/>
-          </svg>
           <span className="text-xs font-semibold text-neutral-200 tracking-wide">OpenParsed</span>
         </div>
         {fileName && (

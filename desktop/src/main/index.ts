@@ -1,9 +1,14 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
+import log from 'electron-log/main'
 import { join } from 'path'
 import { spawn, ChildProcess } from 'child_process'
 import { createServer, createConnection } from 'net'
 import * as dotenv from 'dotenv'
+
+log.transports.file.level = 'info'
+log.transports.file.maxSize = 5 * 1024 * 1024
+autoUpdater.logger = log
 
 let backendProcess: ChildProcess | null = null
 let backendPort = 3001
@@ -61,8 +66,8 @@ async function startBackend(): Promise<void> {
     ...(isDev && process.platform === 'win32' && { shell: true }),
   })
 
-  backendProcess.stdout?.on('data', (d) => console.log('[backend]', d.toString().trim()))
-  backendProcess.stderr?.on('data', (d) => console.error('[backend]', d.toString().trim()))
+  backendProcess.stdout?.on('data', (d) => log.info('[backend]', d.toString().trim()))
+  backendProcess.stderr?.on('data', (d) => log.error('[backend]', d.toString().trim()))
 }
 
 function createWindow(port: number): void {
@@ -119,7 +124,7 @@ app.whenReady().then(async () => {
   createWindow(backendPort)
 
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify().catch((e) => console.error('[auto-update]', e))
+    autoUpdater.checkForUpdatesAndNotify().catch((e) => log.error('[auto-update]', e))
   }
 
   app.on('activate', () => {

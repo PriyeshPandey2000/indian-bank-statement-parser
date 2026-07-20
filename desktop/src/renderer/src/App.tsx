@@ -233,7 +233,8 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-56 shrink-0 border-r border-neutral-800/60 flex flex-col bg-[#0d0d0d]">
-          <div className="px-3 pt-8 pb-4 flex items-center gap-2">
+          <div className="h-9 shrink-0" />
+          <div className="px-3 pt-3 pb-4 flex items-center gap-2">
             <div className="flex flex-1 items-center gap-1.5 rounded-md border border-neutral-700/60 bg-neutral-800/60 px-2 py-1.5">
               <Search size={11} className="text-neutral-600 shrink-0" />
               <input

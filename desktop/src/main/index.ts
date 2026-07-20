@@ -119,7 +119,7 @@ app.whenReady().then(async () => {
   createWindow(backendPort)
 
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify()
+    autoUpdater.checkForUpdatesAndNotify().catch((e) => console.error('[auto-update]', e))
   }
 
   app.on('activate', () => {

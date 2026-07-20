@@ -274,7 +274,7 @@ export default function App() {
                 <button
                   key={doc.documentId}
                   onClick={() => selectDoc(doc.documentId, doc.filename)}
-                  className={`w-full text-left rounded-lg px-3 py-3 transition-colors ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
+                  className={`w-full text-left rounded-lg px-3 py-3 transition-colors cursor-pointer ${isActive ? 'bg-neutral-800 ring-1 ring-neutral-700/60' : 'hover:bg-neutral-800/50'}`}
                 >
                   <div className="text-xs font-medium text-neutral-200 truncate leading-tight">{title}</div>
                   {sub && <div className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5">{sub}</div>}
@@ -299,7 +299,7 @@ export default function App() {
                 </div>
               </div>
             )}
-            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
+            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
               <Settings size={11} />
               Settings
             </button>
@@ -376,13 +376,13 @@ export default function App() {
                 <div className="flex items-center gap-3 w-full">
                   <button
                     onClick={handleCancelStaged}
-                    className="flex-1 text-xs font-medium px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-all"
+                    className="flex-1 text-xs font-medium px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpload}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer"
                   >
                     <Upload size={13} />
                     Upload
@@ -406,14 +406,14 @@ export default function App() {
                 <div className="flex items-center gap-2" style={{ marginRight: 20 }}>
                   <button
                     onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
-                    className="text-xs font-medium px-4 py-1.5 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all"
+                    className="text-xs font-medium px-4 py-1.5 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
                   >
                     New file
                   </button>
                   <a
                     href={`${apiBase}/document/${selectedId}/export/csv`}
                     download
-                    className="flex items-center gap-2 text-xs font-medium px-4 py-1.5 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all"
+                    className="flex items-center gap-2 text-xs font-medium px-4 py-1.5 rounded-md border border-blue-500/60 bg-blue-600/90 hover:bg-blue-500 hover:border-blue-400 text-white transition-all cursor-pointer"
                   >
                     <Download size={12} />
                     Export CSV

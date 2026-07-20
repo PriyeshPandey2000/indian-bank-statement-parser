@@ -313,14 +313,14 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
-                className="flex flex-col items-center gap-3 border border-dashed border-neutral-700 hover:border-blue-500 rounded-xl p-14 cursor-pointer transition-colors group"
+                className="flex flex-col items-center gap-6 border border-dashed border-neutral-700 hover:border-blue-500 rounded-2xl px-20 py-16 cursor-pointer transition-colors group"
                 onDrop={handleDrop}
                 onDragOver={e => e.preventDefault()}
               >
-                <Upload size={32} className="text-neutral-600 group-hover:text-blue-400 transition-colors" />
+                <Upload size={40} className="text-neutral-600 group-hover:text-blue-400 transition-colors" />
                 <div className="text-center">
-                  <div className="text-sm text-neutral-300 font-medium">Drop a bank statement PDF</div>
-                  <div className="text-xs text-neutral-600 mt-1">or click to browse</div>
+                  <div className="text-base text-neutral-300 font-medium">Drop a bank statement PDF</div>
+                  <div className="text-sm text-neutral-600 mt-2">or click to browse</div>
                 </div>
                 <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileDrop(f) }} />
                 {error && <div className="text-red-400 text-xs mt-1">{error}</div>}

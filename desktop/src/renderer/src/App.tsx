@@ -220,7 +220,7 @@ export default function App() {
             type="button"
             className="text-xs font-semibold text-neutral-200 tracking-wide cursor-pointer hover:text-white transition-colors bg-transparent border-0 p-0"
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
+            onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false); setError('') }}
           >OpenParsed</button>
         </div>
         {fileName && (
@@ -412,7 +412,7 @@ export default function App() {
                 <span className="text-xs font-medium text-neutral-400">{allTx.length} transactions · {pages.length} page{pages.length !== 1 ? 's' : ''}</span>
                 <div className="flex items-center gap-2" style={{ marginRight: 20 }}>
                   <button
-                    onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false) }}
+                    onClick={() => { setStatus('idle'); setPages([]); setFileName(''); setSelectedId(null); setIsEncrypted(false); setPassword(''); setShowPassword(false); setError('') }}
                     className="text-xs font-medium py-2 rounded-md border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-700/80 hover:border-neutral-600 text-neutral-300 transition-all cursor-pointer"
                     style={{ paddingLeft: 16, paddingRight: 16 }}
                   >

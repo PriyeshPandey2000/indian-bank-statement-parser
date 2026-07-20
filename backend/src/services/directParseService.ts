@@ -19,7 +19,7 @@ interface DirectRow {
   page: number;
 }
 
-const DATE_RE   = /\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/;
+const DATE_RE   = /(\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})/;
 const AMOUNT_RE = /^[\d,]+(\.\d+)?$/;
 
 function stripHtml(html: string): string {
@@ -142,16 +142,16 @@ export function buildDirectDocumentTransactions(
   for (const row of rows) {
     if (!pageMap.has(row.page)) pageMap.set(row.page, []);
     pageMap.get(row.page)!.push({
-      id:            id++,
-      date:          '',
-      narration:     '',
-      rawText:       row.values.join(' | '),
-      sourceRows:    [],
-      debit:         '',
-      credit:        '',
-      balance:       '',
-      isSuspicious:  false,
-      rawValues:     row.values,
+      id:           id++,
+      date:         '',
+      narration:    '',
+      rawText:      row.values.join(' | '),
+      sourceRows:   [],
+      debit:        '',
+      credit:       '',
+      balance:      '',
+      isSuspicious: false,
+      rawValues:    row.values,
     });
   }
 
@@ -160,13 +160,13 @@ export function buildDirectDocumentTransactions(
     .map(([page, transactions]) => ({
       page,
       result: {
-        classifiedRows:       [],
+        classifiedRows:      [],
         transactions,
-        headerRowId:          null,
-        bankProfileId:        'direct',
-        unconsumedPreBuffer:  [],
-        directColumns:        columns,
-        isDirectMode:         true,
+        headerRowId:         null,
+        bankProfileId:       'direct',
+        unconsumedPreBuffer: [],
+        directColumns:       columns,
+        isDirectMode:        true,
       },
     }));
 }

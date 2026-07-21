@@ -98,7 +98,7 @@ function createWindow(port: number): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
     try {
       const { protocol } = new URL(url)
-      if (protocol === 'https:' || protocol === 'http:') shell.openExternal(url)
+      if (protocol === 'https:' || protocol === 'http:' || protocol === 'mailto:') shell.openExternal(url)
     } catch {}
     return { action: 'deny' }
   })

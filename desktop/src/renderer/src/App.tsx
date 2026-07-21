@@ -56,6 +56,7 @@ export default function App() {
   const portReady = port !== null
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
+  const [showLicenseDialog, setShowLicenseDialog] = useState(false)
   const [pagesUsed, setPagesUsed] = useState<number | null>(null)
   const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
@@ -134,6 +135,7 @@ export default function App() {
         if (body.pagesLimit !== undefined) setPagesLimit(body.pagesLimit)
         setLicenseBlocked(true)
         setLicenseMessage(body.error)
+        setShowLicenseDialog(true)
         setStatus('idle')
         return
       }
@@ -212,18 +214,39 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
-      {licenseBlocked && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/95 backdrop-blur">
-          <div className="flex flex-col items-center gap-4 max-w-sm text-center px-8">
-            <div className="text-2xl">🔒</div>
-            <div className="text-sm font-semibold text-neutral-200">Trial Limit Reached</div>
-            <div className="text-xs text-neutral-500 leading-relaxed">{licenseMessage}</div>
-            <a
-              href="mailto:priyeshpandey2000@gmail.com"
-              className="text-xs font-medium px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-all"
+      {showLicenseDialog && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="license-dialog-title" className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 text-center bg-neutral-900 border border-neutral-800 rounded-2xl px-8 py-8 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setShowLicenseDialog(false)}
+              className="absolute top-3 right-3 text-neutral-600 hover:text-neutral-400 transition-colors p-1"
+              aria-label="Close"
             >
-              Contact Priyesh
-            </a>
+              <X size={16} />
+            </button>
+            <div className="text-2xl">🔒</div>
+            <div id="license-dialog-title" className="text-sm font-semibold text-neutral-200">Usage Limit Reached</div>
+            <div className="text-xs text-neutral-500 leading-relaxed">
+              All your credits have been used up. Contact Priyesh to continue processing new files.
+            </div>
+            <div className="flex flex-col gap-2 w-full">
+              <a
+                href="mailto:priyeshpandey2000@gmail.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              >
+                Contact Priyesh
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowLicenseDialog(false)}
+                className="text-xs px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-colors"
+              >
+                View existing files
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -271,14 +294,15 @@ export default function App() {
             <div className="flex items-center justify-between" style={{ paddingLeft: 8, paddingRight: 6, paddingTop: 6, paddingBottom: 6 }}>
               <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Statements</span>
               <label
-                title="Upload new PDF"
-                tabIndex={0}
-                className="rounded p-1 text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 transition-all cursor-pointer"
-                onDrop={handleDrop}
+                title={licenseBlocked ? 'Usage limit reached' : 'Upload new PDF'}
+                tabIndex={licenseBlocked ? -1 : 0}
+                className={`rounded p-1 transition-all ${licenseBlocked ? 'text-neutral-700 cursor-not-allowed' : 'text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 cursor-pointer'}`}
+                onDrop={e => { e.preventDefault(); if (!licenseBlocked) handleDrop(e) }}
                 onDragOver={e => e.preventDefault()}
+                onClick={licenseBlocked ? e => { e.preventDefault(); setShowLicenseDialog(true) } : undefined}
               >
                 <Plus size={11} />
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
+                {!licenseBlocked && <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />}
               </label>
             </div>
             {filteredDocs.length === 0 && (
@@ -304,7 +328,19 @@ export default function App() {
           </div>
 
           <div className="border-t border-neutral-800/60 px-3 py-2 flex flex-col gap-1.5">
-            {pagesUsed !== null && pagesLimit !== null && (
+            {licenseBlocked ? (
+              <div className="flex items-center justify-between text-[10px] mb-0.5">
+                <span className="text-amber-500/80">Credits expired</span>
+                <a
+                  href="mailto:priyeshpandey2000@gmail.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Contact Priyesh
+                </a>
+              </div>
+            ) : pagesUsed !== null && pagesLimit !== null && (
               <div className="w-full">
                 <div className="flex justify-between text-[10px] text-neutral-600 mb-1">
                   <span>{pagesUsed} / {pagesLimit} pages used</span>
@@ -330,19 +366,21 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
-                tabIndex={0}
-                className="flex flex-col items-center justify-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl cursor-pointer transition-all group hover:bg-neutral-900/30 w-full max-w-lg" style={{ minHeight: 320, padding: '60px 80px' }}
-                onDrop={handleDrop}
+                tabIndex={licenseBlocked ? -1 : 0}
+                className={`flex flex-col items-center justify-center gap-8 border border-dashed rounded-3xl transition-all w-full max-w-lg ${licenseBlocked ? 'border-neutral-800 cursor-not-allowed opacity-50' : 'border-neutral-700/70 hover:border-blue-500/60 cursor-pointer group hover:bg-neutral-900/30'}`}
+                style={{ minHeight: 320, padding: '60px 80px' }}
+                onDrop={e => { e.preventDefault(); if (!licenseBlocked) handleDrop(e) }}
                 onDragOver={e => e.preventDefault()}
+                onClick={licenseBlocked ? e => { e.preventDefault(); setShowLicenseDialog(true) } : undefined}
               >
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 group-hover:border-blue-500/30 transition-all">
-                  <Upload size={28} className="text-neutral-500 group-hover:text-blue-400 transition-colors" />
+                <div className={`p-4 rounded-2xl bg-neutral-900 border border-neutral-800 transition-all ${!licenseBlocked ? 'group-hover:border-blue-500/30' : ''}`}>
+                  <Upload size={28} className={`transition-colors ${licenseBlocked ? 'text-neutral-700' : 'text-neutral-500 group-hover:text-blue-400'}`} />
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-semibold text-neutral-200 tracking-tight">Drop a bank statement PDF</div>
-                  <div className="text-xs text-neutral-600 mt-1.5">or click to browse</div>
+                  <div className="text-xs text-neutral-600 mt-1.5">{licenseBlocked ? 'Upload disabled — usage limit reached' : 'or click to browse'}</div>
                 </div>
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
+                {!licenseBlocked && <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />}
                 {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
               </label>
             </div>
@@ -370,7 +408,7 @@ export default function App() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUpload() } }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!licenseBlocked) handleUpload() } }}
                       placeholder={isEncrypted ? 'Enter PDF password…' : 'Enter password…'}
                       autoFocus={isEncrypted}
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-neutral-600 transition-colors pr-16"
@@ -403,8 +441,9 @@ export default function App() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleUpload()}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer"
+                    onClick={() => licenseBlocked ? setShowLicenseDialog(true) : handleUpload()}
+                    aria-disabled={licenseBlocked}
+                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg text-white transition-all ${licenseBlocked ? 'bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'}`}
                   >
                     <Upload size={13} />
                     Upload

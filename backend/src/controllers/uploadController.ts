@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { Request, Response } from 'express';
 import { saveUploadedPdf } from '../services/uploadService';
+import { decryptPdf } from '../services/pdfDecryptService';
 import { getDocumentDir } from '../utils/storage';
 
 function countPdfPages(buffer: Buffer): number {
@@ -35,11 +37,13 @@ async function checkLicense(pages: number): Promise<{ allowed: boolean; reason?:
 
 export async function uploadPdf(req: Request, res: Response): Promise<void> {
   if (!req.file) {
+    console.error('[upload] no file in request. content-type:', req.headers['content-type'], 'body keys:', Object.keys(req.body || {}), 'files:', req.files);
     res.status(400).json({ error: 'No file uploaded' });
     return;
   }
 
   if (req.file.mimetype !== 'application/pdf') {
+    console.error('[upload] wrong mimetype:', req.file.mimetype);
     res.status(400).json({ error: 'File must be a PDF' });
     return;
   }
@@ -57,7 +61,24 @@ export async function uploadPdf(req: Request, res: Response): Promise<void> {
   }
 
   const password = typeof req.body.password === 'string' && req.body.password ? req.body.password : undefined;
-  const documentId = saveUploadedPdf(req.file.buffer, password);
+
+  let pdfBuffer = req.file.buffer;
+  if (password) {
+    // Write to tmp, decrypt with qpdf, read back
+    const tmpIn = path.join(os.tmpdir(), `upload-${Date.now()}.pdf`);
+    try {
+      fs.writeFileSync(tmpIn, pdfBuffer);
+      pdfBuffer = await decryptPdf(tmpIn, password);
+    } catch (err) {
+      console.error('[upload] qpdf decrypt failed:', err);
+      res.status(400).json({ error: 'Incorrect password or unsupported encryption.' });
+      return;
+    } finally {
+      fs.rmSync(tmpIn, { force: true });
+    }
+  }
+
+  const documentId = saveUploadedPdf(pdfBuffer);
 
   fs.writeFileSync(
     path.join(getDocumentDir(documentId), 'metadata.json'),

@@ -117,30 +117,16 @@ export default function App() {
     }
   }, [apiBase])
 
-  const handleFileDrop = useCallback(async (file: File) => {
+  const handleUpload = useCallback(async (overrideFile?: File, overridePassword?: string) => {
     if (!apiBase) return
-    if (!file.name.toLowerCase().endsWith('.pdf')) { setError('Only PDF files supported'); return }
-    setFileName(file.name)
-    setError('')
-    setPages([])
-    setSelectedId(null)
-    setPassword('')
-    setShowPassword(false)
-    const encrypted = await checkEncrypted(file)
-    setIsEncrypted(encrypted)
-    setStagedFile(file)
-    setStatus('staged')
-  }, [apiBase, checkEncrypted])
-
-  const handleUpload = useCallback(async () => {
-    if (!apiBase || !stagedFile) return
-    const file = stagedFile
-    setStagedFile(null)
+    const file = overrideFile ?? stagedFile
+    if (!file) return
     setStatus('uploading')
     try {
       const form = new FormData()
-      form.append('file', file)
-      if (password) form.append('password', password)
+      form.append('file', file, file.name || 'upload.pdf')
+      const pw = overridePassword ?? password
+      if (pw) form.append('password', pw)
       const uploadRes = await fetch(`${apiBase}/upload`, { method: 'POST', body: form })
       if (uploadRes.status === 402) {
         const body = await uploadRes.json() as { error: string; reason?: string; pagesUsed?: number; pagesLimit?: number }
@@ -151,7 +137,10 @@ export default function App() {
         setStatus('idle')
         return
       }
-      if (!uploadRes.ok) throw new Error('Upload failed')
+      if (!uploadRes.ok) {
+        const body = await uploadRes.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? 'Upload failed')
+      }
       const uploadData = await uploadRes.json() as { documentId: string; pagesUsed?: number; pagesLimit?: number }
       if (uploadData.pagesUsed !== undefined) setPagesUsed(uploadData.pagesUsed)
       if (uploadData.pagesLimit !== undefined) setPagesLimit(uploadData.pagesLimit)
@@ -167,10 +156,36 @@ export default function App() {
       setPages(data.pages)
       setStatus('done')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
-      setStatus('error')
+      const msg = e instanceof Error ? e.message : 'Something went wrong'
+      setError(msg)
+      // For encrypted PDFs keep the staged file so user can correct the password and retry.
+      if (isEncrypted && stagedFile) {
+        setStagedFile(file)
+        setStatus('staged')
+      } else {
+        setStatus('error')
+      }
     }
-  }, [apiBase, stagedFile, password, loadDocs])
+  }, [apiBase, stagedFile, password, loadDocs, isEncrypted])
+
+  const handleFileDrop = useCallback(async (file: File) => {
+    if (!apiBase) return
+    if (!file.name.toLowerCase().endsWith('.pdf')) { setError('Only PDF files supported'); return }
+    setFileName(file.name)
+    setError('')
+    setPages([])
+    setSelectedId(null)
+    setPassword('')
+    setShowPassword(false)
+    const encrypted = await checkEncrypted(file)
+    setIsEncrypted(encrypted)
+    if (!encrypted) {
+      await handleUpload(file, '')
+    } else {
+      setStagedFile(file)
+      setStatus('staged')
+    }
+  }, [apiBase, checkEncrypted, handleUpload])
 
   const handleCancelStaged = useCallback(() => {
     setStagedFile(null)
@@ -355,7 +370,7 @@ export default function App() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleUpload() }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUpload() } }}
                       placeholder={isEncrypted ? 'Enter PDF password…' : 'Enter password…'}
                       autoFocus={isEncrypted}
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-neutral-600 transition-colors pr-16"
@@ -388,7 +403,7 @@ export default function App() {
                     Cancel
                   </button>
                   <button
-                    onClick={handleUpload}
+                    onClick={() => handleUpload()}
                     className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer"
                   >
                     <Upload size={13} />

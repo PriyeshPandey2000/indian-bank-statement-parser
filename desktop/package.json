@@ -72,11 +72,27 @@
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "extraResources": [
+        {
+          "from": "build/bin/mac/qpdf",
+          "to": "bin/qpdf"
+        },
+        {
+          "from": "build/bin/mac/libs",
+          "to": "bin/libs"
+        }
+      ]
     },
     "win": {
       "target": [
         "nsis"
+      ],
+      "extraResources": [
+        {
+          "from": "build/bin/win",
+          "to": "bin"
+        }
       ]
     },
     "publish": {

@@ -1,6 +1,6 @@
 {
   "name": "open-parsed-desktop",
-  "version": "0.2.0",
+  "version": "0.1.2",
   "private": true,
   "description": "Bank statement parser for accountants and CAs",
   "author": "Priyesh Pandey <priyeshpandey2000@gmail.com>",

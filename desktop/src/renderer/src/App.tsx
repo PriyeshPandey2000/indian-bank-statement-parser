@@ -56,6 +56,7 @@ export default function App() {
   const portReady = port !== null
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
+  const [showLicenseDialog, setShowLicenseDialog] = useState(false)
   const [pagesUsed, setPagesUsed] = useState<number | null>(null)
   const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
@@ -134,6 +135,7 @@ export default function App() {
         if (body.pagesLimit !== undefined) setPagesLimit(body.pagesLimit)
         setLicenseBlocked(true)
         setLicenseMessage(body.error)
+        setShowLicenseDialog(true)
         setStatus('idle')
         return
       }
@@ -212,18 +214,37 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
-      {licenseBlocked && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/95 backdrop-blur">
-          <div className="flex flex-col items-center gap-4 max-w-sm text-center px-8">
-            <div className="text-2xl">🔒</div>
-            <div className="text-sm font-semibold text-neutral-200">Trial Limit Reached</div>
-            <div className="text-xs text-neutral-500 leading-relaxed">{licenseMessage}</div>
-            <a
-              href="mailto:priyeshpandey2000@gmail.com"
-              className="text-xs font-medium px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-all"
+      {showLicenseDialog && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
+          <div className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 text-center bg-neutral-900 border border-neutral-800 rounded-2xl px-8 py-8 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setShowLicenseDialog(false)}
+              className="absolute top-3 right-3 text-neutral-600 hover:text-neutral-400 transition-colors p-1"
+              aria-label="Close"
             >
-              Contact Priyesh
-            </a>
+              <X size={16} />
+            </button>
+            <div className="text-2xl">🔒</div>
+            <div className="text-sm font-semibold text-neutral-200">Usage Limit Reached</div>
+            <div className="text-xs text-neutral-500 leading-relaxed">
+              All your credits have been used up. Contact Priyesh to continue processing new files.
+            </div>
+            <div className="flex flex-col gap-2 w-full">
+              <a
+                href="mailto:priyeshpandey2000@gmail.com"
+                className="text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              >
+                Contact Priyesh
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowLicenseDialog(false)}
+                className="text-xs px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-colors"
+              >
+                View existing files
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -330,19 +351,21 @@ export default function App() {
           {status === 'idle' || status === 'error' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <label
-                tabIndex={0}
-                className="flex flex-col items-center justify-center gap-8 border border-dashed border-neutral-700/70 hover:border-blue-500/60 rounded-3xl cursor-pointer transition-all group hover:bg-neutral-900/30 w-full max-w-lg" style={{ minHeight: 320, padding: '60px 80px' }}
-                onDrop={handleDrop}
-                onDragOver={e => e.preventDefault()}
+                tabIndex={licenseBlocked ? -1 : 0}
+                className={`flex flex-col items-center justify-center gap-8 border border-dashed rounded-3xl transition-all w-full max-w-lg ${licenseBlocked ? 'border-neutral-800 cursor-not-allowed opacity-50' : 'border-neutral-700/70 hover:border-blue-500/60 cursor-pointer group hover:bg-neutral-900/30'}`}
+                style={{ minHeight: 320, padding: '60px 80px' }}
+                onDrop={licenseBlocked ? undefined : handleDrop}
+                onDragOver={licenseBlocked ? undefined : e => e.preventDefault()}
+                onClick={licenseBlocked ? e => { e.preventDefault(); setShowLicenseDialog(true) } : undefined}
               >
-                <div className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 group-hover:border-blue-500/30 transition-all">
-                  <Upload size={28} className="text-neutral-500 group-hover:text-blue-400 transition-colors" />
+                <div className={`p-4 rounded-2xl bg-neutral-900 border border-neutral-800 transition-all ${!licenseBlocked ? 'group-hover:border-blue-500/30' : ''}`}>
+                  <Upload size={28} className={`transition-colors ${licenseBlocked ? 'text-neutral-700' : 'text-neutral-500 group-hover:text-blue-400'}`} />
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-semibold text-neutral-200 tracking-tight">Drop a bank statement PDF</div>
-                  <div className="text-xs text-neutral-600 mt-1.5">or click to browse</div>
+                  <div className="text-xs text-neutral-600 mt-1.5">{licenseBlocked ? 'Upload disabled — usage limit reached' : 'or click to browse'}</div>
                 </div>
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
+                {!licenseBlocked && <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />}
                 {error && <div className="text-red-400 text-xs mt-1">{error}</div>}
               </label>
             </div>

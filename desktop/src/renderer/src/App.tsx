@@ -244,9 +244,10 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(CONTACT_EMAIL)
-                    setEmailCopied(true)
-                    setTimeout(() => setEmailCopied(false), 2000)
+                    navigator.clipboard.writeText(CONTACT_EMAIL).then(() => {
+                      setEmailCopied(true)
+                      setTimeout(() => setEmailCopied(false), 2000)
+                    }).catch(() => {})
                   }}
                   className="shrink-0 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
                   aria-label="Copy email"

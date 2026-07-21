@@ -368,10 +368,11 @@ export default function App() {
                 </div>
               </div>
             )}
-            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
+            {/* Settings button — hidden until settings are implemented */}
+            {/* <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
               <Settings size={11} />
               Settings
-            </button>
+            </button> */}
           </div>
         </aside>
 

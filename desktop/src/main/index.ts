@@ -134,6 +134,7 @@ app.whenReady().then(async () => {
   log.info('[backend] ready on port %d', backendPort)
 
   ipcMain.handle('get-backend-port', () => backendPort)
+  ipcMain.handle('open-external', (_event, url: string) => shell.openExternal(url))
   createWindow(backendPort)
   log.info('[window] created')
 

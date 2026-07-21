@@ -134,6 +134,14 @@ app.whenReady().then(async () => {
   log.info('[backend] ready on port %d', backendPort)
 
   ipcMain.handle('get-backend-port', () => backendPort)
+  ipcMain.handle('open-external', (_event, url: string) => {
+    try {
+      const { protocol } = new URL(url)
+      if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+        return shell.openExternal(url)
+      }
+    } catch {}
+  })
   createWindow(backendPort)
   log.info('[window] created')
 

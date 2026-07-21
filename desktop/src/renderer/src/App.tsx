@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff, FileText } from 'lucide-react'
+import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff, FileText, Copy, Check } from 'lucide-react'
 
 declare global {
   interface Window {
     api: {
       getBackendPort: () => Promise<number>
+      openExternal: (url: string) => Promise<void>
     }
   }
 }
+
+const CONTACT_EMAIL = 'priyeshpandey2000@gmail.com'
 
 interface DocMeta {
   documentId: string
@@ -57,6 +60,7 @@ export default function App() {
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
+  const [emailCopied, setEmailCopied] = useState(false)
   const [pagesUsed, setPagesUsed] = useState<number | null>(null)
   const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
@@ -215,34 +219,46 @@ export default function App() {
   return (
     <div className="flex h-screen flex-col bg-neutral-950 text-neutral-100">
       {showLicenseDialog && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
-          <div role="dialog" aria-modal="true" aria-labelledby="license-dialog-title" className="relative flex flex-col items-center gap-4 max-w-sm w-full mx-4 text-center bg-neutral-900 border border-neutral-800 rounded-2xl px-8 py-8 shadow-2xl">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-950/75 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="license-dialog-title" className="relative flex flex-col items-center gap-5 max-w-xs w-full mx-4 text-center bg-neutral-900 border border-neutral-800 rounded-2xl px-7 py-7 shadow-2xl">
             <button
               type="button"
               onClick={() => setShowLicenseDialog(false)}
               className="absolute top-3 right-3 text-neutral-600 hover:text-neutral-400 transition-colors p-1"
               aria-label="Close"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
-            <div className="text-2xl">🔒</div>
-            <div id="license-dialog-title" className="text-sm font-semibold text-neutral-200">Usage Limit Reached</div>
-            <div className="text-xs text-neutral-500 leading-relaxed">
-              All your credits have been used up. Contact Priyesh to continue processing new files.
+            <div className="p-3 rounded-xl bg-neutral-800 border border-neutral-700">
+              <Lock size={20} className="text-neutral-400" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div id="license-dialog-title" className="text-sm font-semibold text-neutral-100">Credits Expired</div>
+              <div className="text-xs text-neutral-500 leading-relaxed">
+                Your free credits have been used up.<br />Contact Priyesh to keep going.
+              </div>
             </div>
             <div className="flex flex-col gap-2 w-full">
-              <a
-                href="mailto:priyeshpandey2000@gmail.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-              >
-                Contact Priyesh
-              </a>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-neutral-800 border border-neutral-700">
+                <span className="flex-1 text-xs text-neutral-300 text-left truncate">{CONTACT_EMAIL}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(CONTACT_EMAIL).then(() => {
+                      setEmailCopied(true)
+                      setTimeout(() => setEmailCopied(false), 2000)
+                    }).catch(() => {})
+                  }}
+                  className="shrink-0 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  aria-label="Copy email"
+                >
+                  {emailCopied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowLicenseDialog(false)}
-                className="text-xs px-4 py-2.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-colors"
+                className="text-xs px-4 py-2.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-500 transition-colors cursor-pointer"
               >
                 View existing files
               </button>
@@ -331,14 +347,13 @@ export default function App() {
             {licenseBlocked ? (
               <div className="flex items-center justify-between text-[10px] mb-0.5">
                 <span className="text-amber-500/80">Credits expired</span>
-                <a
-                  href="mailto:priyeshpandey2000@gmail.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setShowLicenseDialog(true)}
+                  className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-0 p-0"
                 >
                   Contact Priyesh
-                </a>
+                </button>
               </div>
             ) : pagesUsed !== null && pagesLimit !== null && (
               <div className="w-full">
@@ -354,10 +369,11 @@ export default function App() {
                 </div>
               </div>
             )}
-            <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
+            {/* Settings button — hidden until settings are implemented */}
+            {/* <button className="flex items-center gap-2 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
               <Settings size={11} />
               Settings
-            </button>
+            </button> */}
           </div>
         </aside>
 

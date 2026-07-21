@@ -62,7 +62,7 @@ async function startBackend(): Promise<void> {
       ...process.env,
       PORT: String(backendPort),
       STORAGE_DIR: app.getPath('userData'),
-      ...(!isDev && { ELECTRON_RUN_AS_NODE: '1' }),
+      ...(!isDev && { ELECTRON_RUN_AS_NODE: '1', RESOURCES_PATH: process.resourcesPath }),
     },
     stdio: 'pipe',
     // shell:true lets Windows find npx.cmd via cmd.exe; not needed on mac/linux

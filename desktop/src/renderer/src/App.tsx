@@ -128,19 +128,26 @@ export default function App() {
     setShowPassword(false)
     const encrypted = await checkEncrypted(file)
     setIsEncrypted(encrypted)
-    setStagedFile(file)
-    setStatus('staged')
-  }, [apiBase, checkEncrypted])
+    if (!encrypted) {
+      // No password needed — upload immediately, skip staged screen
+      await handleUpload(file, '')
+    } else {
+      setStagedFile(file)
+      setStatus('staged')
+    }
+  }, [apiBase, checkEncrypted, handleUpload])
 
-  const handleUpload = useCallback(async () => {
-    if (!apiBase || !stagedFile) return
-    const file = stagedFile
+  const handleUpload = useCallback(async (overrideFile?: File, overridePassword?: string) => {
+    if (!apiBase) return
+    const file = overrideFile ?? stagedFile
+    if (!file) return
     setStagedFile(null)
     setStatus('uploading')
     try {
       const form = new FormData()
       form.append('file', file)
-      if (password) form.append('password', password)
+      const pw = overridePassword ?? password
+      if (pw) form.append('password', pw)
       const uploadRes = await fetch(`${apiBase}/upload`, { method: 'POST', body: form })
       if (uploadRes.status === 402) {
         const body = await uploadRes.json() as { error: string; reason?: string; pagesUsed?: number; pagesLimit?: number }

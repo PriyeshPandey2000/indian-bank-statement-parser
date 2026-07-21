@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { Request, Response } from 'express';
 import { saveUploadedPdf } from '../services/uploadService';
+import { decryptPdf } from '../services/pdfDecryptService';
 import { getDocumentDir } from '../utils/storage';
 
 function countPdfPages(buffer: Buffer): number {
@@ -57,7 +59,23 @@ export async function uploadPdf(req: Request, res: Response): Promise<void> {
   }
 
   const password = typeof req.body.password === 'string' && req.body.password ? req.body.password : undefined;
-  const documentId = saveUploadedPdf(req.file.buffer, password);
+
+  let pdfBuffer = req.file.buffer;
+  if (password) {
+    // Write to tmp, decrypt with qpdf, read back
+    const tmpIn = path.join(os.tmpdir(), `upload-${Date.now()}.pdf`);
+    try {
+      fs.writeFileSync(tmpIn, pdfBuffer);
+      pdfBuffer = await decryptPdf(tmpIn, password);
+    } catch {
+      res.status(400).json({ error: 'Incorrect password or unsupported encryption.' });
+      return;
+    } finally {
+      fs.rmSync(tmpIn, { force: true });
+    }
+  }
+
+  const documentId = saveUploadedPdf(pdfBuffer);
 
   fs.writeFileSync(
     path.join(getDocumentDir(documentId), 'metadata.json'),

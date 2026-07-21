@@ -37,11 +37,13 @@ async function checkLicense(pages: number): Promise<{ allowed: boolean; reason?:
 
 export async function uploadPdf(req: Request, res: Response): Promise<void> {
   if (!req.file) {
+    console.error('[upload] no file in request. content-type:', req.headers['content-type'], 'body keys:', Object.keys(req.body || {}), 'files:', req.files);
     res.status(400).json({ error: 'No file uploaded' });
     return;
   }
 
   if (req.file.mimetype !== 'application/pdf') {
+    console.error('[upload] wrong mimetype:', req.file.mimetype);
     res.status(400).json({ error: 'File must be a PDF' });
     return;
   }
@@ -67,7 +69,8 @@ export async function uploadPdf(req: Request, res: Response): Promise<void> {
     try {
       fs.writeFileSync(tmpIn, pdfBuffer);
       pdfBuffer = await decryptPdf(tmpIn, password);
-    } catch {
+    } catch (err) {
+      console.error('[upload] qpdf decrypt failed:', err);
       res.status(400).json({ error: 'Incorrect password or unsupported encryption.' });
       return;
     } finally {

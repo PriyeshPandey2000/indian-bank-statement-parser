@@ -292,14 +292,15 @@ export default function App() {
             <div className="flex items-center justify-between" style={{ paddingLeft: 8, paddingRight: 6, paddingTop: 6, paddingBottom: 6 }}>
               <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Statements</span>
               <label
-                title="Upload new PDF"
-                tabIndex={0}
-                className="rounded p-1 text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 transition-all cursor-pointer"
-                onDrop={handleDrop}
-                onDragOver={e => e.preventDefault()}
+                title={licenseBlocked ? 'Usage limit reached' : 'Upload new PDF'}
+                tabIndex={licenseBlocked ? -1 : 0}
+                className={`rounded p-1 transition-all ${licenseBlocked ? 'text-neutral-700 cursor-not-allowed' : 'text-neutral-600 hover:text-neutral-400 hover:bg-neutral-700/50 cursor-pointer'}`}
+                onDrop={licenseBlocked ? undefined : handleDrop}
+                onDragOver={licenseBlocked ? undefined : e => e.preventDefault()}
+                onClick={licenseBlocked ? e => { e.preventDefault(); setShowLicenseDialog(true) } : undefined}
               >
                 <Plus size={11} />
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />
+                {!licenseBlocked && <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ''; if (f) handleFileDrop(f) }} />}
               </label>
             </div>
             {filteredDocs.length === 0 && (
@@ -393,7 +394,7 @@ export default function App() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUpload() } }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!licenseBlocked) handleUpload() } }}
                       placeholder={isEncrypted ? 'Enter PDF password…' : 'Enter password…'}
                       autoFocus={isEncrypted}
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-neutral-600 transition-colors pr-16"
@@ -426,8 +427,9 @@ export default function App() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleUpload()}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer"
+                    onClick={() => licenseBlocked ? setShowLicenseDialog(true) : handleUpload()}
+                    disabled={licenseBlocked}
+                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-medium px-4 py-2.5 rounded-lg text-white transition-all ${licenseBlocked ? 'bg-neutral-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 cursor-pointer'}`}
                   >
                     <Upload size={13} />
                     Upload

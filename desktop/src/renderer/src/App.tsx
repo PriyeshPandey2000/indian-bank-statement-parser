@@ -121,7 +121,6 @@ export default function App() {
     if (!apiBase) return
     const file = overrideFile ?? stagedFile
     if (!file) return
-    setStagedFile(null)
     setStatus('uploading')
     try {
       const form = new FormData()
@@ -138,7 +137,10 @@ export default function App() {
         setStatus('idle')
         return
       }
-      if (!uploadRes.ok) throw new Error('Upload failed')
+      if (!uploadRes.ok) {
+        const body = await uploadRes.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? 'Upload failed')
+      }
       const uploadData = await uploadRes.json() as { documentId: string; pagesUsed?: number; pagesLimit?: number }
       if (uploadData.pagesUsed !== undefined) setPagesUsed(uploadData.pagesUsed)
       if (uploadData.pagesLimit !== undefined) setPagesLimit(uploadData.pagesLimit)
@@ -154,10 +156,17 @@ export default function App() {
       setPages(data.pages)
       setStatus('done')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
-      setStatus('error')
+      const msg = e instanceof Error ? e.message : 'Something went wrong'
+      setError(msg)
+      // For encrypted PDFs keep the staged file so user can correct the password and retry.
+      if (isEncrypted && stagedFile) {
+        setStagedFile(file)
+        setStatus('staged')
+      } else {
+        setStatus('error')
+      }
     }
-  }, [apiBase, stagedFile, password, loadDocs])
+  }, [apiBase, stagedFile, password, loadDocs, isEncrypted])
 
   const handleFileDrop = useCallback(async (file: File) => {
     if (!apiBase) return

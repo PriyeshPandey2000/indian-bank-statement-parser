@@ -283,7 +283,10 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
       }
 
       const colCount = columns.length;
-      const useBbox = headerMids.length === colCount;
+      // Prefer current block's own bboxes when available and complete — avoids stale
+      // geometry from the first table when later pages have shifted column positions.
+      const activeHeaderMids = hMids.length === colCount ? hMids : headerMids;
+      const useBbox = activeHeaderMids.length === colCount;
 
       // Fallback: detect merged column by header-text when geometry isn't available globally.
       // Fires when: no global headerMids (useBbox=false) AND this block has fewer headers than schema.
@@ -298,7 +301,7 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
         let aligned: string[];
 
         if (useBbox) {
-          aligned = assignToColumns(cells, headerMids);
+          aligned = assignToColumns(cells, activeHeaderMids);
           if (aligned.every(v => v === '')) aligned = cells.map(c => c.text);
         } else {
           aligned = cells.map(c => c.text);

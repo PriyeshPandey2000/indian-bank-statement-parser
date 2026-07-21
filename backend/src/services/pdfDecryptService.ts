@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -17,7 +18,7 @@ function getQpdfBinary(): string {
 }
 
 export async function decryptPdf(inputPath: string, password: string): Promise<Buffer> {
-  const tmpOut = path.join(os.tmpdir(), `decrypted-${Date.now()}.pdf`);
+  const tmpOut = path.join(os.tmpdir(), `decrypted-${crypto.randomBytes(8).toString('hex')}.pdf`);
   const qpdf = getQpdfBinary();
 
   await new Promise<void>((resolve, reject) => {

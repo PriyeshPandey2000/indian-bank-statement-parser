@@ -233,6 +233,8 @@ export default function App() {
             <div className="flex flex-col gap-2 w-full">
               <a
                 href="mailto:priyeshpandey2000@gmail.com"
+                target="_blank"
+                rel="noreferrer"
                 className="text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors"
               >
                 Contact Priyesh
@@ -326,7 +328,19 @@ export default function App() {
           </div>
 
           <div className="border-t border-neutral-800/60 px-3 py-2 flex flex-col gap-1.5">
-            {pagesUsed !== null && pagesLimit !== null && (
+            {licenseBlocked ? (
+              <div className="flex items-center justify-between text-[10px] mb-0.5">
+                <span className="text-amber-500/80">Credits expired</span>
+                <a
+                  href="mailto:priyeshpandey2000@gmail.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Contact Priyesh
+                </a>
+              </div>
+            ) : pagesUsed !== null && pagesLimit !== null && (
               <div className="w-full">
                 <div className="flex justify-between text-[10px] text-neutral-600 mb-1">
                   <span>{pagesUsed} / {pagesLimit} pages used</span>

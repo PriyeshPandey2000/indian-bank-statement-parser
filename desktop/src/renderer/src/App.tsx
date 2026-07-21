@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff, FileText } from 'lucide-react'
+import { Upload, Download, Loader2, Plus, Search, X, Settings, Lock, Eye, EyeOff, FileText, Copy, Check } from 'lucide-react'
 
 declare global {
   interface Window {
@@ -12,8 +12,7 @@ declare global {
   }
 }
 
-const CONTACT_EMAIL = 'mailto:priyeshpandey2000@gmail.com'
-const openContactMail = () => window.api?.openExternal(CONTACT_EMAIL)
+const CONTACT_EMAIL = 'priyeshpandey2000@gmail.com'
 
 interface DocMeta {
   documentId: string
@@ -61,6 +60,7 @@ export default function App() {
   const [licenseBlocked, setLicenseBlocked] = useState(false)
   const [licenseMessage, setLicenseMessage] = useState('')
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
+  const [emailCopied, setEmailCopied] = useState(false)
   const [pagesUsed, setPagesUsed] = useState<number | null>(null)
   const [pagesLimit, setPagesLimit] = useState<number | null>(null)
 
@@ -239,13 +239,21 @@ export default function App() {
               </div>
             </div>
             <div className="flex flex-col gap-2 w-full">
-              <button
-                type="button"
-                onClick={openContactMail}
-                className="text-xs font-medium px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer"
-              >
-                Contact Priyesh
-              </button>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-neutral-800 border border-neutral-700">
+                <span className="flex-1 text-xs text-neutral-300 text-left truncate">{CONTACT_EMAIL}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(CONTACT_EMAIL)
+                    setEmailCopied(true)
+                    setTimeout(() => setEmailCopied(false), 2000)
+                  }}
+                  className="shrink-0 text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  aria-label="Copy email"
+                >
+                  {emailCopied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowLicenseDialog(false)}
@@ -340,7 +348,7 @@ export default function App() {
                 <span className="text-amber-500/80">Credits expired</span>
                 <button
                   type="button"
-                  onClick={openContactMail}
+                  onClick={() => setShowLicenseDialog(true)}
                   className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer bg-transparent border-0 p-0"
                 >
                   Contact Priyesh

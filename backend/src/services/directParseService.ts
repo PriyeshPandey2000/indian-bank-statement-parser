@@ -243,6 +243,79 @@ function assignToColumns(cells: { text: string; x: number | null }[], headerMids
   return row;
 }
 
+// Detects rows shifted 1 column left because the PDF omitted empty cells for Chq No and
+// Debit/Credit. Pattern: [Date, Chq No, Particulars, Debit, Credit, Balance, ...] where
+// Chq No gets the narration text and the last 2 columns are empty padding.
+// Uses running balance arithmetic to distinguish debit vs credit transactions.
+function fixMissingEmptyCellShift(rows: DirectRow[], columns: string[]): DirectRow[] {
+  const chqIdx    = columns.findIndex(c => /\b(chq|cheque|ref\s*no)\b/i.test(c));
+  const debitIdx  = columns.findIndex(c => /\b(debit|dr|withdrawal)\b/i.test(c));
+  const creditIdx = columns.findIndex(c => /\b(credit|cr|deposit)\b/i.test(c));
+  const balIdx    = columns.findIndex(c => /\b(balance|bal)\b/i.test(c));
+
+  if (chqIdx < 0 || debitIdx < 0 || creditIdx < 0 || balIdx < 0) return rows;
+  // Only handle exact layout: [ChqNo, Particulars, Debit, Credit, Balance] consecutive
+  if (debitIdx !== chqIdx + 2 || creditIdx !== debitIdx + 1 || balIdx !== creditIdx + 1) return rows;
+
+  let prevBalance: number | null = null;
+  let shiftCount = 0;
+
+  const fixed = rows.map(row => {
+    const vals = row.values;
+    const chqVal = vals[chqIdx]?.trim() ?? '';
+
+    // Shifted row: chq slot has narration AND last 2 values are empty padding.
+    // Don't filter on DATE_RE — narrations often contain date ranges.
+    const lastTwoEmpty =
+      (vals[vals.length - 1] ?? '') === '' && (vals[vals.length - 2] ?? '') === '';
+    const isShifted =
+      lastTwoEmpty &&
+      chqVal.length > 2 &&
+      !/^\d[\d,]*\.?\d*$/.test(chqVal);
+
+    if (!isShifted) {
+      const balNum = parseFloat((vals[balIdx] ?? '').replace(/,/g, ''));
+      if (!isNaN(balNum)) prevBalance = balNum;
+      return row;
+    }
+
+    // Extract shifted values: [date, narration, amount, balance, initBr, '', '']
+    const narration = chqVal;
+    const rawAmount  = vals[chqIdx + 1] ?? '';
+    const rawBalance = vals[chqIdx + 2] ?? '';
+    const amountNum  = parseFloat(rawAmount.replace(/,/g, ''));
+    const balNum     = parseFloat(rawBalance.replace(/,/g, ''));
+
+    let isDebit = true;
+    if (prevBalance !== null && !isNaN(amountNum) && !isNaN(balNum)) {
+      const debitDiff  = Math.abs(prevBalance - amountNum - balNum);
+      const creditDiff = Math.abs(prevBalance + amountNum - balNum);
+      if (creditDiff < debitDiff) isDebit = false;
+    }
+
+    const newVals = new Array<string>(vals.length).fill('');
+    newVals[0]          = vals[0] ?? '';    // Date
+    newVals[chqIdx]     = '';               // Chq No (empty)
+    newVals[chqIdx + 1] = narration;        // Particulars
+    newVals[debitIdx]   = isDebit ? rawAmount : '';
+    newVals[creditIdx]  = isDebit ? '' : rawAmount;
+    newVals[balIdx]     = rawBalance;
+    // Trailing columns after Balance (e.g., Init.Br)
+    for (let off = 1; balIdx + off < vals.length; off++) {
+      newVals[balIdx + off] = vals[chqIdx + 2 + off] ?? '';
+    }
+
+    prevBalance = balNum;
+    shiftCount++;
+    return { ...row, values: newVals };
+  });
+
+  if (shiftCount > 0) {
+    console.log(`[DirectParser] fixedColumnShift: corrected ${shiftCount}/${rows.length} rows`);
+  }
+  return fixed;
+}
+
 export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows: DirectRow[] } {
   const json = chandraJson as ChandraJson;
   if (!Array.isArray(json?.children)) {
@@ -322,8 +395,9 @@ export function parseDirectJson(chandraJson: unknown): { columns: string[]; rows
     }
   }
 
-  console.log(`[DirectParser] total rows=${rows.length}`);
-  return { columns, rows };
+  const finalRows = fixMissingEmptyCellShift(rows, columns);
+  console.log(`[DirectParser] total rows=${finalRows.length}`);
+  return { columns, rows: finalRows };
 }
 
 export function buildDirectDocumentTransactions(

@@ -14,8 +14,7 @@ const BANKS = ['Axis Bank', 'HDFC', 'ICICI', 'SBI', 'Kotak', 'PNB', 'BOB'];
 
 const STEPS = [
   { n: '01', title: 'Upload PDF', body: 'Drop your bank statement — any format, any bank, password-protected supported.' },
-  { n: '02', title: 'AI Extracts', body: 'LLM reads every page, identifies transactions, verifies balance chain automatically.' },
-  { n: '03', title: 'Download CSV', body: 'Clean structured data ready for Excel, Tally, or any accounting software.' },
+  { n: '02', title: 'Download CSV', body: 'Clean structured data ready for Excel, Tally, or any accounting software.' },
 ];
 
 const PREVIEW_ROWS = [
@@ -265,10 +264,10 @@ export default function UploadZone({ redirectBase = '/doc' }: Props) {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[11px] uppercase tracking-[0.15em] text-gray-400 mb-3">How it works</p>
-            <h2 className="text-2xl font-bold tracking-tight">Three steps, no configuration</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Two steps, no configuration</h2>
           </div>
 
-          <div className="grid grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+          <div className="grid grid-cols-2 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
             {STEPS.map((s) => (
               <div key={s.n} className="bg-[#111118] px-8 py-8">
                 <div className="text-[11px] font-mono text-blue-400/80 mb-4 tracking-widest">{s.n}</div>

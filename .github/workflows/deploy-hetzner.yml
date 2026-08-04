@@ -22,8 +22,9 @@ jobs:
             git pull origin main
 
             cd backend
-            npm ci --omit=dev
+            npm ci
             npm run build
+            npm prune --omit=dev
             cd ..
 
             pm2 restart open-parsed-backend

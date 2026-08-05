@@ -117,10 +117,10 @@ export default function UploadZone({ redirectBase = '/doc' }: Props) {
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <nav className="relative z-10 px-8 py-4 flex items-center justify-between border-b border-white/5 sticky top-0 bg-[#0a0a0f]/80 backdrop-blur-md">
         <span className="font-semibold text-sm tracking-tight">OpenParsed</span>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/8 bg-white/3">
+        {/* <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-white/8 bg-white/3">
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-gray-500 text-[11px]">AI-powered extraction</span>
-        </div>
+        </div> */}
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}

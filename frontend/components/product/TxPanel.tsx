@@ -201,12 +201,10 @@ function TxRow({ tx, isSelected, isDirectMode, onSelect, onJumpToPdf, onSave }: 
               </td>
             ))}
             <td className="px-2 py-2 whitespace-nowrap">
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                  className="text-[10px] text-gray-600 hover:text-gray-300 px-1 transition-colors"
-                >{expanded ? '▲' : '▼'}</button>
-              </div>
+              <button
+                onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                className="text-[10px] text-gray-600 hover:text-gray-300 px-1 transition-colors"
+              >{expanded ? '▲' : '▼'}</button>
             </td>
           </>
         ) : (
@@ -252,7 +250,7 @@ function TxRow({ tx, isSelected, isDirectMode, onSelect, onJumpToPdf, onSave }: 
 
       {expanded && (
         <tr className={`border-b border-gray-700/60 ${tx.isSuspicious ? 'border-l-2 border-l-orange-500/50' : ''}`}>
-          <td colSpan={6} className="px-4 py-3 bg-gray-900/60 text-xs">
+          <td colSpan={isDirectMode ? (tx.rawValues?.length ?? 0) + 1 : 6} className="px-4 py-3 bg-gray-900/60 text-xs">
             <div className="space-y-1.5">
               {tx.isSuspicious && tx.suspiciousReason && (
                 <div className="bg-orange-500/10 border border-orange-500/30 rounded px-3 py-2 text-orange-300 text-[11px]">

@@ -120,7 +120,7 @@ export const useViewerStore = create<ViewerState>()(
       scrollTargetPage: null,
 
       initDocument: (id) =>
-        set({ documentId: id, parseStatus: 'idle', currentPage: 1, rowData: null, rowStatus: 'idle' }),
+        set({ documentId: id, parseStatus: 'idle', currentPage: 1, rowData: null, rowStatus: 'idle', txData: null, txStatus: 'idle', selectedTransaction: null }),
 
       setParsedData: (data) =>
         set({ parsedData: data, totalPages: data.pages.length, parseStatus: 'done', currentPage: 1 }),

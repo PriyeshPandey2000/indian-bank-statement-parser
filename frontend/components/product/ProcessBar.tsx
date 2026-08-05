@@ -101,7 +101,7 @@ export default function ProcessBar({
           disabled={isRunning}
           className="px-3 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors font-medium"
         >
-          {isRunning ? 'Processing…' : hasData ? 'Re-process' : 'Process'}
+          {isRunning ? 'Converting…' : 'Convert'}
         </button>
       </div>
     </div>

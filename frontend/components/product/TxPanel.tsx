@@ -71,14 +71,7 @@ function ReconciliationBar({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          onClick={onRecheck}
-          disabled={rechecking}
-          title="Re-run balance reconciliation on current data"
-          className="px-2 py-1 text-[11px] rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-gray-200 transition-colors"
-        >
-          {rechecking ? '…' : '↻ Re-check'}
-        </button>
+        {/* Re-check hidden for now */}
         <a
           href={exportCsvUrl(documentId)}
           download

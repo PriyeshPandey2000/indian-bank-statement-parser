@@ -46,10 +46,9 @@ export default function ProcessBar({
     <div className="flex items-center justify-between px-4 py-2.5 bg-gray-900 border-b border-gray-800 shrink-0">
       {/* left: logo + bank + period info */}
       <div className="flex items-center gap-3 min-w-0">
-        <Link href="/" className="text-[13px] font-semibold text-gray-300 hover:text-white transition-colors shrink-0">
-          OpenParsed
+        <Link href="/" className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-300 hover:text-white transition-colors shrink-0">
+          <span className="text-gray-500">←</span> OpenParsed
         </Link>
-        <span className="text-gray-700 text-xs shrink-0">←</span>
         {isDone && bankLabel && (
           <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${
             bankProfileId === 'generic'

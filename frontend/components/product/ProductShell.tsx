@@ -39,11 +39,9 @@ export default function ProductShell({ documentId }: Props) {
       setParsedData(parsed);
 
       setStage('analysing');
-      await extractTransactions(documentId);
+      const result = await extractTransactions(documentId);
       if (abortRef.current) return;
-
-      const finalTxs = await getTransactions(documentId);
-      setTxData(finalTxs);
+      setTxData(result.pages);
 
       setStage('done');
     } catch (err) {

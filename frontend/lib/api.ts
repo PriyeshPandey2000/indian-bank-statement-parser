@@ -90,5 +90,5 @@ export async function reconcile(documentId: string): Promise<DocumentTransaction
 }
 
 export async function extractTransactions(documentId: string): Promise<{ totalTransactions: number; suspiciousCount: number; pages: DocumentTransactions[] }> {
-  return request(`/api/document/${documentId}/extract-transactions`, { method: 'POST' });
+  return request(`/api/document/${documentId}/extract-transactions?mode=direct`, { method: 'POST' });
 }

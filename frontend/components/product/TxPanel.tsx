@@ -98,12 +98,13 @@ type EditDraft = Pick<DetectedTransaction, 'date' | 'narration' | 'debit' | 'cre
 interface RowProps {
   tx: DetectedTransaction;
   isSelected: boolean;
+  isDirectMode: boolean;
   onSelect: () => void;
   onJumpToPdf: () => void;
   onSave: (id: number, draft: EditDraft) => Promise<void>;
 }
 
-function TxRow({ tx, isSelected, onSelect, onJumpToPdf, onSave }: RowProps) {
+function TxRow({ tx, isSelected, isDirectMode, onSelect, onJumpToPdf, onSave }: RowProps) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing]   = useState(false);
   const [saving, setSaving]     = useState(false);
@@ -192,41 +193,61 @@ function TxRow({ tx, isSelected, onSelect, onJumpToPdf, onSave }: RowProps) {
         onDoubleClick={() => setExpanded(e => !e)}
         className={`cursor-pointer border-b border-gray-800/60 transition-colors group ${rowBg}`}
       >
-        <td className="px-3 py-2 text-[11px] text-gray-400 whitespace-nowrap font-mono">
-          {tx.date || <span className="text-red-500/70 italic">no date</span>}
-        </td>
-        <td className="px-3 py-2 text-[11px] text-gray-300 max-w-0 w-full">
-          <div className="flex items-center gap-2">
-            <span className="truncate" title={tx.narration}>
-              {tx.narration || <span className="text-gray-600 italic">—</span>}
-            </span>
-            {tx.isSuspicious && (
-              <span className="shrink-0 text-[10px] text-orange-400/80" title={tx.suspiciousReason}>⚠</span>
-            )}
-          </div>
-        </td>
-        <td className="px-3 py-2 text-[11px] text-red-400 text-right whitespace-nowrap font-mono">
-          {tx.debit ? fmt(tx.debit) : ''}
-        </td>
-        <td className="px-3 py-2 text-[11px] text-green-400 text-right whitespace-nowrap font-mono">
-          {tx.credit ? fmt(tx.credit) : ''}
-        </td>
-        <td className="px-3 py-2 text-[11px] text-gray-400 text-right whitespace-nowrap font-mono">
-          {tx.balance ? fmt(tx.balance) : '—'}
-        </td>
-        <td className="px-2 py-2 whitespace-nowrap">
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={e => { e.stopPropagation(); setEditing(true); }}
-              className="text-[10px] text-gray-500 hover:text-blue-400 px-1 transition-colors"
-              title="Edit row"
-            >✎</button>
-            <button
-              onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-              className="text-[10px] text-gray-600 hover:text-gray-300 px-1 transition-colors"
-            >{expanded ? '▲' : '▼'}</button>
-          </div>
-        </td>
+        {isDirectMode && tx.rawValues ? (
+          <>
+            {tx.rawValues.map((val, i) => (
+              <td key={i} className="px-3 py-2 text-[11px] text-gray-300 whitespace-nowrap truncate max-w-xs" title={val}>
+                {val || <span className="text-gray-700">·</span>}
+              </td>
+            ))}
+            <td className="px-2 py-2 whitespace-nowrap">
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  className="text-[10px] text-gray-600 hover:text-gray-300 px-1 transition-colors"
+                >{expanded ? '▲' : '▼'}</button>
+              </div>
+            </td>
+          </>
+        ) : (
+          <>
+            <td className="px-3 py-2 text-[11px] text-gray-400 whitespace-nowrap font-mono">
+              {tx.date || <span className="text-red-500/70 italic">no date</span>}
+            </td>
+            <td className="px-3 py-2 text-[11px] text-gray-300 max-w-0 w-full">
+              <div className="flex items-center gap-2">
+                <span className="truncate" title={tx.narration}>
+                  {tx.narration || <span className="text-gray-600 italic">—</span>}
+                </span>
+                {tx.isSuspicious && (
+                  <span className="shrink-0 text-[10px] text-orange-400/80" title={tx.suspiciousReason}>⚠</span>
+                )}
+              </div>
+            </td>
+            <td className="px-3 py-2 text-[11px] text-red-400 text-right whitespace-nowrap font-mono">
+              {tx.debit ? fmt(tx.debit) : ''}
+            </td>
+            <td className="px-3 py-2 text-[11px] text-green-400 text-right whitespace-nowrap font-mono">
+              {tx.credit ? fmt(tx.credit) : ''}
+            </td>
+            <td className="px-3 py-2 text-[11px] text-gray-400 text-right whitespace-nowrap font-mono">
+              {tx.balance ? fmt(tx.balance) : '—'}
+            </td>
+            <td className="px-2 py-2 whitespace-nowrap">
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={e => { e.stopPropagation(); setEditing(true); }}
+                  className="text-[10px] text-gray-500 hover:text-blue-400 px-1 transition-colors"
+                  title="Edit row"
+                >✎</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  className="text-[10px] text-gray-600 hover:text-gray-300 px-1 transition-colors"
+                >{expanded ? '▲' : '▼'}</button>
+              </div>
+            </td>
+          </>
+        )}
       </tr>
 
       {expanded && (
@@ -262,6 +283,9 @@ export default function TxPanel() {
   const [selectedId, setSelectedId]           = useState<number | null>(null);
   const [showSuspiciousOnly, setShowSuspiciousOnly] = useState(false);
   const [rechecking, setRechecking]           = useState(false);
+
+  const isDirectMode  = txData?.[0]?.result.isDirectMode ?? false;
+  const directColumns = txData?.[0]?.result.directColumns ?? [];
 
   const allTx: DetectedTransaction[] = txData?.flatMap(p => p.result.transactions) ?? [];
   const suspiciousCount = allTx.filter(t => t.isSuspicious).length;
@@ -318,11 +342,21 @@ export default function TxPanel() {
         <table className="w-full text-xs border-collapse">
           <thead className="sticky top-0 bg-gray-900 z-10">
             <tr className="border-b border-gray-700">
-              <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Date</th>
-              <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-full">Narration</th>
-              <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Debit</th>
-              <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Credit</th>
-              <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Balance</th>
+              {isDirectMode ? (
+                directColumns.map((col, i) => (
+                  <th key={i} className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">
+                    {col || `Col ${i + 1}`}
+                  </th>
+                ))
+              ) : (
+                <>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-full">Narration</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Debit</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Credit</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">Balance</th>
+                </>
+              )}
               <th className="px-2 py-2 w-12" />
             </tr>
           </thead>
@@ -332,6 +366,7 @@ export default function TxPanel() {
                 key={tx.id}
                 tx={tx}
                 isSelected={selectedId === tx.id}
+                isDirectMode={isDirectMode}
                 onSelect={() => setSelectedId(prev => prev === tx.id ? null : tx.id)}
                 onJumpToPdf={() => handleJumpToPdf(tx.id)}
                 onSave={handleSave}

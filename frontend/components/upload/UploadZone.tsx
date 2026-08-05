@@ -231,7 +231,7 @@ export default function UploadZone({ redirectBase = '/doc' }: Props) {
                     {password ? <><span className="text-yellow-500">🔒</span><span className="text-yellow-500/80">Password set</span></> : isEncrypted ? <span className="text-yellow-600">Password required</span> : 'No password'}
                   </div>
                   <button onClick={handleUpload} className="flex items-center gap-2 px-5 py-2 text-sm rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all shadow-lg shadow-blue-600/25 hover:shadow-blue-500/30 hover:-translate-y-px">
-                    Analyse
+                    Convert
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                       <path d="M2 7h10M8 3l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

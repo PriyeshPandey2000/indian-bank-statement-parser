@@ -27,7 +27,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full flex flex-col bg-gray-950 text-white">{children}</body>
+      <body className="h-full flex flex-col bg-gray-950 text-white">
+        {children}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script async src="https://tally.so/widgets/embed.js"></script>
+      </body>
     </html>
   );
 }

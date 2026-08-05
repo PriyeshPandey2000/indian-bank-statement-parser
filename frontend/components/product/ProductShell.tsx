@@ -44,6 +44,14 @@ export default function ProductShell({ documentId }: Props) {
       setTxData(result.pages);
 
       setStage('done');
+
+      if (!sessionStorage.getItem('tally_shown')) {
+        sessionStorage.setItem('tally_shown', '1');
+        setTimeout(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).Tally?.openPopup('44Yo9k', { emoji: { text: '👋', animation: 'wave' } });
+        }, 2000);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Pipeline failed');
       setStage('error');

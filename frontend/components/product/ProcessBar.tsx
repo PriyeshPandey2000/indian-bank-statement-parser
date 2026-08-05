@@ -96,13 +96,23 @@ export default function ProcessBar({
             ↓ CSV
           </a>
         )}
-        <button
-          onClick={onProcess}
-          disabled={isRunning}
-          className="px-3 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors font-medium"
-        >
-          {isRunning ? 'Converting…' : 'Convert'}
-        </button>
+        {!isDone && (
+          <button
+            onClick={onProcess}
+            disabled={isRunning}
+            className="px-3 py-1.5 text-xs rounded-lg bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors font-medium"
+          >
+            {isRunning ? 'Converting…' : 'Convert'}
+          </button>
+        )}
+        {isDone && (
+          <button
+            onClick={onProcess}
+            className="px-3 py-1.5 text-xs rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-400 transition-colors font-medium"
+          >
+            Re-convert
+          </button>
+        )}
       </div>
     </div>
   );

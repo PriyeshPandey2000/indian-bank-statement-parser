@@ -347,7 +347,11 @@ export default function UploadZone({ redirectBase = '/doc' }: Props) {
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-white/5 px-8 py-6 flex items-center justify-between">
         <span className="text-gray-700 text-xs">© 2026 OpenParsed</span>
-        <span className="text-gray-700 text-xs">For accountants, CAs &amp; auditors</span>
+        <div className="flex items-center gap-4">
+          <span className="text-gray-700 text-xs">For accountants, CAs &amp; auditors</span>
+          <a href="mailto:priyeshpandey2000@gmail.com" className="text-gray-700 text-xs hover:text-gray-400 transition-colors">Contact</a>
+          <a href="/privacy" className="text-gray-700 text-xs hover:text-gray-400 transition-colors">Privacy Policy</a>
+        </div>
       </footer>
 
     </div>

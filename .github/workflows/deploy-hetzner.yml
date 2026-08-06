@@ -29,3 +29,7 @@ jobs:
 
             pm2 restart open-parsed-backend
             pm2 save
+
+            # Ensure 7-day cleanup cron exists (idempotent)
+            CRON_JOB="0 2 * * * find /opt/open-parsed/storage -maxdepth 1 -mindepth 1 -type d -ctime +7 -exec rm -rf {} +"
+            ( crontab -l 2>/dev/null | grep -qF "$CRON_JOB" ) || ( crontab -l 2>/dev/null; echo "$CRON_JOB" ) | crontab -

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useViewerStore } from '@/lib/store/viewerStore';
-import { detectTransactions, exportCsvUrl } from '@/lib/api';
+import { detectTransactions } from '@/lib/api';
+import AuthedCsvLink from '@/components/auth/AuthedCsvLink';
 import type { DetectedTransaction } from '@/lib/types';
 import TransactionRow from './TransactionRow';
 import { getParseQuality } from './ParseQualityBadge';
@@ -201,13 +202,12 @@ export default function TransactionTable() {
           )}
 
           {allTx.length > 0 && documentId && (
-            <a
-              href={exportCsvUrl(documentId)}
-              download
+            <AuthedCsvLink
+              documentId={documentId}
               className="px-2.5 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors font-medium"
             >
               ↓ CSV
-            </a>
+            </AuthedCsvLink>
           )}
 
           <button

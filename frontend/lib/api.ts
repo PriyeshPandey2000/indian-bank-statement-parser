@@ -1,10 +1,21 @@
 import type { UploadResponse, ParseResponse, ParseResultJson, PageRows, DocumentTransactions, PageColumnResult } from './types';
+import { createClient } from './supabase/client';
 
 // All API calls go through Next.js rewrite proxy (/api/backend/* → localhost:8000/*)
 const PROXY = '/api/backend';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${PROXY}${path}`, init);
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  const res = await fetch(`${PROXY}${path}`, {
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as { error?: string }).error ?? res.statusText);
@@ -27,8 +38,18 @@ export async function getParsedData(documentId: string): Promise<ParseResultJson
   return request<ParseResultJson>(`/api/document/${documentId}/parsed`);
 }
 
-export function screenshotUrl(documentId: string, page: number): string {
-  return `${PROXY}/api/document/${documentId}/screenshot/${page}`;
+// screenshot/export are plain <img src>/<a href> URLs — no Authorization header
+// possible there, so the access token rides along as a query param instead.
+async function authQueryParam(): Promise<string> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? `?token=${encodeURIComponent(token)}` : '';
+}
+
+export async function screenshotUrl(documentId: string, page: number): Promise<string> {
+  const auth = await authQueryParam();
+  return `${PROXY}/api/document/${documentId}/screenshot/${page}${auth}`;
 }
 
 export async function reconstructRows(
@@ -70,8 +91,9 @@ export async function getColumns(documentId: string): Promise<PageColumnResult[]
   return request<PageColumnResult[]>(`/api/document/${documentId}/columns`);
 }
 
-export function exportCsvUrl(documentId: string): string {
-  return `${PROXY}/api/document/${documentId}/export/csv`;
+export async function exportCsvUrl(documentId: string): Promise<string> {
+  const auth = await authQueryParam();
+  return `${PROXY}/api/document/${documentId}/export/csv${auth}`;
 }
 
 export async function patchTransactions(

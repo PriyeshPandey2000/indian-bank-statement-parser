@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadPdf } from '@/lib/api';
+import AuthStatus from '@/components/auth/AuthStatus';
 
 type UploadState = 'idle' | 'staged' | 'uploading' | 'error';
 
@@ -121,6 +122,7 @@ export default function UploadZone({ redirectBase = '/doc' }: Props) {
           <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-gray-500 text-[11px]">AI-powered extraction</span>
         </div> */}
+        <AuthStatus />
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}

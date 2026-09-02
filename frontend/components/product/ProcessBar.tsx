@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import type { PipelineStage } from './ProductShell';
-import { exportCsvUrl } from '@/lib/api';
+import AuthStatus from '@/components/auth/AuthStatus';
+import AuthedCsvLink from '@/components/auth/AuthedCsvLink';
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
   idle:      '',
@@ -90,15 +91,15 @@ export default function ProcessBar({
       </div>
 
       {/* right: actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <AuthStatus />
         {isDone && (
-          <a
-            href={exportCsvUrl(documentId)}
-            download
+          <AuthedCsvLink
+            documentId={documentId}
             className="px-3 py-1.5 text-xs rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors font-medium"
           >
             ↓ CSV
-          </a>
+          </AuthedCsvLink>
         )}
         {!isDone && (
           <button

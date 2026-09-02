@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useViewerStore } from '@/lib/store/viewerStore';
-import { patchTransactions, reconcile, exportCsvUrl } from '@/lib/api';
+import { patchTransactions, reconcile } from '@/lib/api';
+import AuthedCsvLink from '@/components/auth/AuthedCsvLink';
 import type { DetectedTransaction } from '@/lib/types';
 
 function fmt(val: string): string {
@@ -72,13 +73,12 @@ function ReconciliationBar({
       </div>
       <div className="flex items-center gap-2">
         {/* Re-check hidden for now */}
-        <a
-          href={exportCsvUrl(documentId)}
-          download
+        <AuthedCsvLink
+          documentId={documentId}
           className="px-2 py-1 text-[11px] rounded bg-gray-700 hover:bg-gray-600 text-gray-200 transition-colors"
         >
           ↓ CSV
-        </a>
+        </AuthedCsvLink>
       </div>
     </div>
   );

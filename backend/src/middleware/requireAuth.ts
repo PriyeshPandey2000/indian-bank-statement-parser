@@ -10,9 +10,12 @@ export interface AuthedRequest extends Request {
   userId?: string;
 }
 
+// Screenshot/export links are plain <img src>/<a href> — no Authorization header
+// possible there, so those routes pass the access token as ?token= instead.
 export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const headerToken = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = headerToken || (typeof req.query.token === 'string' ? req.query.token : null);
 
   if (!token) {
     res.status(401).json({ error: 'Missing authorization token' });

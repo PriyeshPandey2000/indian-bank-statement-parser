@@ -5,7 +5,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import uploadRouter from './routes/upload';
 import documentRouter from './routes/document';
-import { requireAuth } from './middleware/requireAuth';
+import { requireAuth, AuthedRequest } from './middleware/requireAuth';
 
 const app = express();
 const PORT = Number(process.env['PORT']) || 8000;
@@ -29,17 +29,17 @@ app.get('/health', (_req, res) => {
 });
 
 const STORAGE_ROOT = process.env['STORAGE_DIR'] ?? path.resolve(__dirname, '../storage');
-app.get('/api/documents', requireAuth, (_req, res) => {
+app.get('/api/documents', requireAuth, (req: AuthedRequest, res) => {
   try {
     if (!fs.existsSync(STORAGE_ROOT)) { res.json([]); return; }
     const docs = fs.readdirSync(STORAGE_ROOT)
       .map(id => {
         const metaPath = path.join(STORAGE_ROOT, id, 'metadata.json');
         if (!fs.existsSync(metaPath)) return null;
-        return JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as { documentId: string; filename: string; createdAt: string };
+        return JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as { documentId: string; filename: string; createdAt: string; ownerId?: string };
       })
-      .filter(Boolean)
-      .sort((a, b) => new Date(b!.createdAt).getTime() - new Date(a!.createdAt).getTime());
+      .filter((doc): doc is NonNullable<typeof doc> => doc !== null && doc.ownerId === req.userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.json(docs);
   } catch (e) {
     res.json([]);

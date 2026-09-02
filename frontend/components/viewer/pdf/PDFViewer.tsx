@@ -1,7 +1,7 @@
 'use client';
 
 import { useViewerStore } from '@/lib/store/viewerStore';
-import { screenshotUrl } from '@/lib/api';
+import AuthedImg from '@/components/auth/AuthedImg';
 import BBoxOverlay from '../overlay/BBoxOverlay';
 import RowOverlay from '../overlay/RowOverlay';
 import TransactionOverlay from '../overlay/TransactionOverlay';
@@ -36,9 +36,9 @@ export default function PDFViewer() {
         }}
       >
         {/* page image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={screenshotUrl(documentId, currentPage)}
+        <AuthedImg
+          documentId={documentId}
+          page={currentPage}
           alt={`Page ${currentPage}`}
           width={imgW}
           height={imgH}

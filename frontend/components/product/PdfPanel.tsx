@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useViewerStore } from '@/lib/store/viewerStore';
-import { screenshotUrl } from '@/lib/api';
+import AuthedImg from '@/components/auth/AuthedImg';
 
 interface Props {
   onPageVisible?: (page: number) => void;
@@ -66,9 +66,9 @@ export default function PdfPanel({ onPageVisible }: Props) {
             className="w-full bg-white rounded shadow-lg overflow-hidden"
             style={{ aspectRatio }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={screenshotUrl(documentId, page.page)}
+            <AuthedImg
+              documentId={documentId}
+              page={page.page}
               alt={`Page ${page.page}`}
               className="w-full h-full object-contain block"
               loading={page.page <= 2 ? 'eager' : 'lazy'}

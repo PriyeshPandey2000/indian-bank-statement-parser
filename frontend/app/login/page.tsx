@@ -6,6 +6,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth/AuthCard";
 
+// only allow same-site paths ("/foo") — reject absolute/protocol-relative URLs
+// ("//evil.com", "https://evil.com") so a crafted ?redirect= can't send users off-site
+function safeRedirect(target: string | null): string {
+  if (target && /^\/(?!\/)/.test(target)) return target;
+  return "/";
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,7 +39,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("redirect") || "/");
+    router.push(safeRedirect(searchParams.get("redirect")));
     router.refresh();
   }
 

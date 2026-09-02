@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { saveUploadedPdf } from '../services/uploadService';
 import { decryptPdf } from '../services/pdfDecryptService';
 import { getDocumentDir } from '../utils/storage';
+import { AuthedRequest } from '../middleware/requireAuth';
 
 function countPdfPages(buffer: Buffer): number {
   const text = buffer.toString('latin1');
@@ -35,7 +36,7 @@ async function checkLicense(pages: number): Promise<{ allowed: boolean; reason?:
   }
 }
 
-export async function uploadPdf(req: Request, res: Response): Promise<void> {
+export async function uploadPdf(req: AuthedRequest, res: Response): Promise<void> {
   if (!req.file) {
     console.error('[upload] no file in request. content-type:', req.headers['content-type'], 'body keys:', Object.keys(req.body || {}), 'files:', req.files);
     res.status(400).json({ error: 'No file uploaded' });
@@ -82,7 +83,7 @@ export async function uploadPdf(req: Request, res: Response): Promise<void> {
 
   fs.writeFileSync(
     path.join(getDocumentDir(documentId), 'metadata.json'),
-    JSON.stringify({ documentId, filename: req.file.originalname, createdAt: new Date().toISOString() })
+    JSON.stringify({ documentId, filename: req.file.originalname, createdAt: new Date().toISOString(), ownerId: req.userId })
   );
 
   res.status(201).json({ documentId, pagesUsed: license.pagesUsed, pagesLimit: license.pagesLimit });

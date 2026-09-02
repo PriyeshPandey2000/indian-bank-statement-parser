@@ -1,10 +1,21 @@
 import type { UploadResponse, ParseResponse, ParseResultJson, PageRows, DocumentTransactions, PageColumnResult } from './types';
+import { createClient } from './supabase/client';
 
 // All API calls go through Next.js rewrite proxy (/api/backend/* → localhost:8000/*)
 const PROXY = '/api/backend';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${PROXY}${path}`, init);
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  const res = await fetch(`${PROXY}${path}`, {
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((body as { error?: string }).error ?? res.statusText);

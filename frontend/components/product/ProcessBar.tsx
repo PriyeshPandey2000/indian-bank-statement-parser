@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { PipelineStage } from './ProductShell';
 import { exportCsvUrl } from '@/lib/api';
+import AuthStatus from '@/components/auth/AuthStatus';
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
   idle:      '',
@@ -90,7 +91,8 @@ export default function ProcessBar({
       </div>
 
       {/* right: actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <AuthStatus />
         {isDone && (
           <a
             href={exportCsvUrl(documentId)}

@@ -5,6 +5,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import uploadRouter from './routes/upload';
 import documentRouter from './routes/document';
+import { requireAuth } from './middleware/requireAuth';
 
 const app = express();
 const PORT = Number(process.env['PORT']) || 8000;
@@ -28,7 +29,7 @@ app.get('/health', (_req, res) => {
 });
 
 const STORAGE_ROOT = process.env['STORAGE_DIR'] ?? path.resolve(__dirname, '../storage');
-app.get('/api/documents', (_req, res) => {
+app.get('/api/documents', requireAuth, (_req, res) => {
   try {
     if (!fs.existsSync(STORAGE_ROOT)) { res.json([]); return; }
     const docs = fs.readdirSync(STORAGE_ROOT)
@@ -45,7 +46,7 @@ app.get('/api/documents', (_req, res) => {
   }
 });
 
-app.use('/api/upload', uploadRouter);
+app.use('/api/upload', requireAuth, uploadRouter);
 app.use('/api/document', documentRouter);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
